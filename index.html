@@ -96,11 +96,74 @@ body.tv .tvbar{display:block}
   .g2.quebra,.g3.quebra{grid-template-columns:1fr}
   .chart{height:300px}
 }
+
+/* =================== VISUAL v2: efeitos =================== */
+:root{--acc:#2f7d32; --sombra:0 1px 2px rgba(16,24,40,.06),0 6px 18px rgba(16,24,40,.07); --sombra2:0 14px 34px rgba(16,24,40,.16)}
+body{background:radial-gradient(circle at 12% 0%,rgba(242,183,5,.10),transparent 38%),radial-gradient(circle at 100% 100%,color-mix(in srgb,var(--acc) 12%,transparent),transparent 45%),var(--bg);background-attachment:fixed;transition:background .4s}
+.card{box-shadow:var(--sombra);border-color:transparent;position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease}
+.card:hover{transform:translateY(-3px);box-shadow:var(--sombra2)}
+.card h3{font-size:15px}
+.kpi{padding-top:20px}
+.kpi::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:linear-gradient(90deg,var(--acc),var(--amarelo))}
+.kpi .ico{position:absolute;right:14px;top:16px;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--acc) 13%,transparent)}
+.kpi .v{font-size:28px;letter-spacing:-.6px}
+.kpi small{display:block;padding-right:46px;min-height:30px;line-height:1.3}
+.kpi svg polyline{stroke-dasharray:700;stroke-dashoffset:700;animation:desenha 1.6s ease forwards .25s}
+@keyframes desenha{to{stroke-dashoffset:0}}
+.page.on .hero,.page.on .grid>*,.page.on>.card{animation:sobe .55s cubic-bezier(.2,.7,.3,1) both}
+.page.on .grid>*:nth-child(2){animation-delay:.05s}.page.on .grid>*:nth-child(3){animation-delay:.1s}
+.page.on .grid>*:nth-child(4){animation-delay:.15s}.page.on .grid>*:nth-child(5){animation-delay:.2s}
+@keyframes sobe{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+header{position:sticky;top:0;z-index:4;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:color-mix(in srgb,var(--bg) 78%,transparent)}
+.seg{box-shadow:var(--sombra);border-color:transparent}
+.seg button{transition:background .25s,color .25s}
+.seg button.on{background:var(--acc)}
+.btn{box-shadow:var(--sombra);border-color:transparent;transition:transform .2s}
+.btn:hover{transform:translateY(-1px)}
+nav button{transition:background .2s,padding .2s,color .2s}
+nav button:hover{padding-left:24px}
+nav button.on{background:linear-gradient(90deg,rgba(242,183,5,.20),rgba(242,183,5,.02))}
+.aovivo{display:inline-flex;gap:7px;align-items:center;font-size:11px;font-weight:600;background:rgba(76,175,80,.16);color:#a5e3a8;padding:4px 10px;border-radius:20px;margin-top:10px}
+.aovivo i{width:7px;height:7px;border-radius:50%;background:#4caf50;animation:pulsa 1.8s infinite}
+@keyframes pulsa{0%{box-shadow:0 0 0 0 rgba(76,175,80,.7)}70%{box-shadow:0 0 0 9px rgba(76,175,80,0)}100%{box-shadow:0 0 0 0 rgba(76,175,80,0)}}
+/* banner de destaque */
+.hero{position:relative;overflow:hidden;border-radius:18px;padding:28px 32px;color:#fff;margin-bottom:16px;min-height:170px;box-shadow:var(--sombra2);
+  background:linear-gradient(115deg,#1b1e23 0%,#2b2f36 50%,color-mix(in srgb,var(--acc) 85%,#000) 125%)}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:6px;background:repeating-linear-gradient(-45deg,var(--amarelo) 0 12px,#1d1f23 12px 24px);opacity:.9}
+.hero small{color:var(--amarelo);font-weight:800;letter-spacing:1.4px;text-transform:uppercase;font-size:11.5px}
+.hero h2{font-size:31px;margin:8px 0;max-width:660px;line-height:1.18;position:relative;z-index:1}
+.hero h2 span{color:var(--amarelo)}
+.hero p{opacity:.82;max-width:600px;font-size:14px;line-height:1.5;position:relative;z-index:1}
+.hero .chips{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;position:relative;z-index:1}
+.hero .chips span{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);padding:6px 12px;border-radius:20px;font-size:12.5px;backdrop-filter:blur(4px)}
+.hero .canavial{position:absolute;right:-10px;bottom:0;height:100%;width:380px;opacity:.95;pointer-events:none}
+.hero .canavial g{transform-box:fill-box;transform-origin:50% 100%;animation:balanca 4.5s ease-in-out infinite}
+@keyframes balanca{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(2.2deg)}}
+/* insights */
+.insights li{border-left:0;display:flex;gap:11px;align-items:flex-start;animation:sobe .5s ease both;transition:transform .2s}
+.insights li:hover{transform:translateX(4px)}
+.insights li .n{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--amarelo);color:#1d1f23;font-weight:800;font-size:13px}
+/* pódio */
+.podio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:end}
+.podio div{border-radius:12px;padding:12px 8px;text-align:center;background:var(--bg);transition:transform .2s}
+.podio div:hover{transform:translateY(-3px)}
+.podio .p1{background:linear-gradient(180deg,rgba(242,183,5,.35),rgba(242,183,5,.08));padding-top:20px}
+.podio .m{font-size:28px;display:block}
+.podio b{display:block;font-size:13.5px;margin-top:4px}
+.podio small{color:var(--sub);font-size:12px}
+.podio .p1{order:2}.podio .p2{order:1}.podio .p3{order:3}
+/* carregando */
+.skel{background:linear-gradient(90deg,var(--card) 25%,var(--grid) 50%,var(--card) 75%);background-size:200% 100%;animation:brilho 1.2s infinite;border-radius:12px;min-height:140px}
+@keyframes brilho{to{background-position:-200% 0}}
+th{background:#2b2f36}
+.tabela{border-color:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#b9bdc4;border-radius:9px}
+@media (max-width:860px){.hero{padding:22px 20px}.hero h2{font-size:22px}.hero .canavial{width:220px;opacity:.35}.kpi .v{font-size:22px}.kpi .ico{width:32px;height:32px;font-size:16px}}
 </style>
 </head>
 <body>
 <aside>
-  <div class="marca"><b>Raio-X <span>da Cana</span></b><small>O agro brasileiro em dados · IBGE</small></div>
+  <div class="marca"><b>🌾 Raio-X <span>da Cana</span></b><small>O agro brasileiro em dados · IBGE</small><br><span class="aovivo" id="aovivo"><i></i>carregando…</span></div>
   <nav id="nav">
     <button data-p="visao" class="on"><i>📊</i><span>Visão geral</span></button>
     <button data-p="estados"><i>🗺️</i><span>Estados</span></button>
@@ -110,7 +173,7 @@ body.tv .tvbar{display:block}
     <button data-p="regiao"><i>📍</i><span>Iturama e região</span></button>
     <button data-p="culturas"><i>🌾</i><span>Cana × Soja × Milho</span></button>
   </nav>
-  <div class="rodape" id="rodape">Fonte: IBGE — PAM<br>Projeto de <a href="https://github.com/jmarcelogomesparreira" target="_blank">Marcelo Parreira</a></div>
+  <div class="rodape" id="rodape">Fonte: IBGE — PAM<br>Projeto de <a href="https://github.com/jmarcelogomesparreira-ship-it" target="_blank">Marcelo Parreira</a></div>
 </aside>
 
 <main>
@@ -130,7 +193,8 @@ body.tv .tvbar{display:block}
 
   <!-- ===== VISÃO GERAL ===== -->
   <section class="page on" id="p-visao">
-    <div class="grid g5" id="kpis"></div>
+    <div class="hero" id="hero"><div class="skel" style="background:none;min-height:110px"></div></div>
+    <div class="grid g5" id="kpis"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
     <div class="grid g3 quebra mt">
       <div class="card" style="grid-column:span 2">
         <h3>Evolução da produção e da área colhida no Brasil</h3>
@@ -161,7 +225,7 @@ body.tv .tvbar{display:block}
   <!-- ===== MUNICÍPIOS ===== -->
   <section class="page" id="p-municipios">
     <div class="grid g2 quebra">
-      <div class="card"><h3>Os 20 maiores produtores</h3><div class="desc" id="desc-top"></div><div id="ch-top" class="chart alto"></div></div>
+      <div class="card"><h3>Os 20 maiores produtores</h3><div class="desc" id="desc-top"></div><div class="podio" id="podio"></div><div id="ch-top" class="chart alto"></div></div>
       <div class="card">
         <h3>Todos os municípios produtores</h3><div class="desc">Clique no título da coluna para ordenar</div>
         <div class="filtros"><input id="f-busca" placeholder="Buscar município…"><select id="f-uf"><option value="">Todos os estados</option></select></div>
@@ -275,7 +339,7 @@ function layoutBase(){
     xaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--line")},
     yaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--line")},
     hoverlabel:{bgcolor:"#2b2f36", bordercolor:"#2b2f36", font:{color:"#fff"}},
-    legend:{orientation:"h", y:-0.18}, hovermode:"closest"};
+    legend:{orientation:"h", y:-0.18}, hovermode:"closest", transition:{duration:500, easing:"cubic-in-out"}};
 }
 function junta(a,b){ for (const k in b){ if (b[k] && typeof b[k]==="object" && !Array.isArray(b[k]) && a[k]) junta(a[k],b[k]); else a[k]=b[k]; } return a; }
 function plot(id, data, lay={}){ Plotly.react(id, data, junta(layoutBase(), lay), {responsive:true, displayModeBar:false, locale:"pt-BR"}); }
@@ -293,6 +357,33 @@ function variacao(arr, anos, voltar=10){
   return `<span class="var ${x>=0?"up":"down"}">${x>=0?"▲":"▼"} ${pct(Math.abs(x),0)} vs ${anos[i-voltar]}</span>`;
 }
 
+
+// ============================================================
+//  EFEITOS: números contando e canavial animado
+// ============================================================
+function conta(el, alvo, formata, ms=1100){
+  if (alvo==null || !isFinite(alvo)){ el.textContent = formata(alvo); return; }
+  const t0 = performance.now();
+  const passo = t => { const p = Math.min(1,(t-t0)/ms), e = 1-Math.pow(1-p,3);
+    el.textContent = formata(alvo*e); if (p<1) requestAnimationFrame(passo); else el.textContent = formata(alvo); };
+  requestAnimationFrame(passo);
+}
+function canavial(){
+  let g = "", x = 20;
+  const alturas = [150,190,165,210,175,200,155,185,170,195,160];
+  alturas.forEach((h,i)=>{
+    const y0 = 240-h, cor = i%2 ? "#7cb342" : "#9ccc65";
+    let nos = ""; for (let y=240-22; y>y0+10; y-=26) nos += `<line x1="${x-3}" y1="${y}" x2="${x+3}" y2="${y}" stroke="#33691e" stroke-width="2"/>`;
+    g += `<g style="animation-delay:${(i%5)*-0.7}s">
+      <line x1="${x}" y1="240" x2="${x}" y2="${y0}" stroke="${cor}" stroke-width="5" stroke-linecap="round"/>${nos}
+      <path d="M${x} ${y0+18} q -28 -10 -40 10" stroke="${cor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M${x} ${y0+34} q 30 -14 44 6" stroke="${cor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M${x} ${y0+2} q -6 -22 -18 -30" stroke="${cor}" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
+    x += 34;
+  });
+  return `<svg class="canavial" viewBox="0 0 400 240" preserveAspectRatio="xMaxYMax meet" style="opacity:.55">${g}</svg>`;
+}
+
 // ============================================================
 //  PÁGINA: VISÃO GERAL
 // ============================================================
@@ -300,14 +391,25 @@ function rVisao(){
   const b = P().brasil, c = cor();
   const [prod] = ultimo(b.producao), [area] = ultimo(b.area), [rend] = ultimo(b.rend), [val] = ultimo(b.valor), [nm] = ultimo(b.n_municipios);
   const kpis = [
-    ["Produção", curto(prod,"t"), b.producao],
-    ["Área colhida", curto(area,"ha"), b.area],
-    ["Produtividade", fmt(rend,1)+" t/ha", b.rend],
-    ["Valor da produção", reais(val), b.valor],
-    ["Municípios produtores", fmt(nm), b.n_municipios]
+    ["🌾","Produção", prod, v=>curto(v,"t"), b.producao],
+    ["🗺️","Área colhida", area, v=>curto(v,"ha"), b.area],
+    ["⚡","Produtividade", rend, v=>fmt(v,1)+" t/ha", b.rend],
+    ["💰","Valor da produção", val, reais, b.valor],
+    ["🏘️","Municípios produtores", nm, v=>fmt(v), b.n_municipios]
   ];
-  document.getElementById("kpis").innerHTML = kpis.map(([n,v,arr])=>
-    `<div class="card kpi"><small>${n}</small><div class="v">${v}</div>${variacao(arr,b.anos)}${spark(arr,c)}</div>`).join("");
+  document.getElementById("kpis").innerHTML = kpis.map(([ico,n,,,arr],i)=>
+    `<div class="card kpi"><div class="ico">${ico}</div><small>${n}</small><div class="v" id="kv${i}">—</div>${variacao(arr,b.anos)}${spark(arr,c)}</div>`).join("");
+  kpis.forEach(([,,v,f],i)=>conta(document.getElementById("kv"+i), v, f));
+
+  // Banner de destaque
+  const [, iUlt] = ultimo(b.producao), lider = rankUF(iUlt)[0];
+  const recorde = Math.max(...b.producao.filter(x=>x!=null));
+  document.getElementById("hero").innerHTML = `${canavial()}
+    <small>Raio-X · safra ${b.anos[iUlt]}</small>
+    <h2>O Brasil colheu <span id="hero-n">—</span> de ${PROD[S.prod].nome.toLowerCase()} em ${b.anos[iUlt]}</h2>
+    <p>Em ${curto(area,"hectares")} espalhados por ${fmt(nm)} municípios. Dados oficiais do IBGE, de ${S.d.meta.ano_inicio} a ${S.d.meta.ano_fim}, atualizados automaticamente todo mês.</p>
+    <div class="chips"><span>📍 Líder: <b>${lider?lider[0]:"—"}</b> (${lider?pct(lider[1]/prod):"—"})</span><span>🏆 Recorde: <b>${b.anos[b.producao.indexOf(recorde)]}</b></span><span>⚡ ${fmt(rend,1)} t/ha</span><span>💰 ${reais(val)}</span></div>`;
+  conta(document.getElementById("hero-n"), prod, v=>curto(v,"toneladas"), 1400);
 
   plot("ch-evolucao", [
     {type:"bar", x:b.anos, y:b.area, name:"Área colhida (ha)", marker:{color:css("--line")}, hovertemplate:"%{x}<br>Área: %{y:,.0f} ha<extra></extra>"},
@@ -325,7 +427,7 @@ function rVisao(){
   if (ufs.length) ins.push(`<b>${ufs[0][0]}</b> lidera com ${pct(ufs[0][1]/prod)} da produção nacional, seguido por ${ufs[1]?.[0]} (${pct(ufs[1]?.[1]/prod)}).`);
   const pa = P().pareto;
   if (pa) ins.push(`Só <b>${fmt(pa.n50)}</b> municípios (${pct(pa.n50/pa.n_total)} dos produtores) respondem por metade de toda a produção.`);
-  document.getElementById("insights").innerHTML = ins.map(t=>`<li>${t}</li>`).join("");
+  document.getElementById("insights").innerHTML = ins.map((t,i)=>`<li style="animation-delay:${.15+i*.08}s"><span class="n">${i+1}</span><span>${t}</span></li>`).join("");
 }
 
 // ============================================================
@@ -376,6 +478,9 @@ function rMunicipios(){
   plot("ch-top", [{type:"bar", orientation:"h", y:top.map(x=>corta(`${x[1]} - ${x[2]}`, 16)), x:top.map(x=>x[4]),
     marker:{color:top.map(x=>x[0]===dest?css("--amarelo"):cor())}, hovertemplate:"%{y}<br>%{x:,.0f} t<extra></extra>"}],
     {margin:{l:cel()?110:170}, xaxis:{title:"toneladas"}});
+  const tp = P().municipios.slice(0,3), totP = P().municipios.reduce((s,x)=>s+(x[4]||0),0);
+  document.getElementById("podio").innerHTML = tp.map((x,i)=>
+    `<div class="p${i+1}"><span class="m">${["🥇","🥈","🥉"][i]}</span><b>${x[1]}</b><small>${x[2]} · ${curto(x[4],"t")} · ${pct(x[4]/totP)}</small></div>`).join("");
   const sel = document.getElementById("f-uf"), atual = sel.value;
   const ufs = [...new Set(m.map(x=>x[2]))].sort();
   sel.innerHTML = `<option value="">Todos os estados</option>` + ufs.map(u=>`<option ${u===atual?"selected":""}>${u}</option>`).join("");
@@ -509,6 +614,7 @@ function rCulturas(){
 const RENDER = {visao:rVisao, estados:rEstados, municipios:rMunicipios, concentracao:rConcentracao, produtividade:rProdutividade, regiao:rRegiao, culturas:rCulturas};
 function mostra(p){
   S.page = p;
+  document.body.style.setProperty("--acc", PROD[S.prod].cor);
   document.querySelectorAll(".page").forEach(s=>s.classList.toggle("on", s.id==="p-"+p));
   document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on", b.dataset.p===p));
   const [t,sub] = TITULOS[p];
@@ -543,7 +649,8 @@ async function iniciar(){
     if (!r.ok) throw new Error("HTTP "+r.status);
     S.d = await r.json();
   } catch(e){ return semDados(e.message); }
-  document.getElementById("rodape").innerHTML = `${S.d.meta.fonte}<br>Atualizado em ${S.d.meta.gerado_em}<br>Projeto de <a href="https://github.com/jmarcelogomesparreira" target="_blank">Marcelo Parreira</a>`;
+  document.getElementById("rodape").innerHTML = `${S.d.meta.fonte}<br>Atualizado em ${S.d.meta.gerado_em}<br>Projeto de <a href="https://github.com/jmarcelogomesparreira-ship-it" target="_blank">Marcelo Parreira</a>`;
+  document.getElementById("aovivo").innerHTML = `<i></i>Dados até ${S.d.meta.ano_fim} · IBGE`;
   document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>mostra(b.dataset.p));
   document.querySelectorAll("#seg-prod button").forEach(b=>b.onclick=()=>{
     S.prod = b.dataset.prod; S.comp = null; S.limite = 150;

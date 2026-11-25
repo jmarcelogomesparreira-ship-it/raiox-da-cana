@@ -2,10 +2,10 @@
 
 Painel interativo com a produção de **cana-de-açúcar, soja e milho** em **todos os municípios do Brasil**, de 1974 até o ano mais recente, com dados oficiais do **IBGE**.
 
-🔗 **Painel ao vivo:** `https://SEU-USUARIO.github.io/raiox-da-cana/`
+🔗 **Painel ao vivo:** `https://jmarcelogomesparreira-ship-it.github.io/raiox-da-cana/`
 
 > Projeto de portfólio de **Marcelo José Gomes Parreira**: auxiliar administrativo no setor sucroenergético, técnico em Açúcar e Álcool e Lean Six Sigma Yellow Belt.
-> [LinkedIn](https://www.linkedin.com/in/marcelo-josé-gomes-parreira-101b352ab) · [GitHub](https://github.com/jmarcelogomesparreira)
+> [LinkedIn](https://www.linkedin.com/in/marcelo-josé-gomes-parreira-101b352ab) · [GitHub](https://github.com/jmarcelogomesparreira-ship-it)
 
 ---
 
