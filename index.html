@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raio-X da Cana — O agro brasileiro em dados</title>
+<meta name="description" content="Análise da produção de cana-de-açúcar, soja e milho em todos os municípios do Brasil com dados do IBGE (PAM).">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+:root{
+  --bg:#e6e7e9; --card:#ffffff; --txt:#22262c; --sub:#6b7280; --line:#d9dbdf; --grid:#eceef1;
+  --side:#2b2f36; --side2:#353a43; --sidetxt:#c9ced6; --amarelo:#f2b705; --preto:#1d1f23;
+  --cana:#2f7d32; --soja:#b7791f; --milho:#d4a017; --alerta:#c0392b; --ok:#2f7d32;
+}
+body.dark{--bg:#181a1e; --card:#23262c; --txt:#e8eaed; --sub:#9aa1ab; --line:#33373f; --grid:#2c3037; --side:#111317; --side2:#1d2026}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);display:flex;min-height:100vh}
+/* ---------- menu lateral ---------- */
+aside{width:236px;background:var(--side);color:var(--sidetxt);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:5}
+.marca{padding:22px 20px 18px;border-bottom:1px solid var(--side2)}
+.marca b{display:block;color:#fff;font-size:19px;letter-spacing:.3px}
+.marca b span{color:var(--amarelo)}
+.marca small{font-size:11.5px;opacity:.75}
+nav{padding:10px 0;flex:1;overflow:auto}
+nav button{all:unset;cursor:pointer;display:flex;gap:11px;align-items:center;width:100%;padding:11px 20px;font-size:14px;box-sizing:border-box;border-left:3px solid transparent}
+nav button:hover{background:var(--side2);color:#fff}
+nav button.on{background:var(--side2);color:#fff;border-left-color:var(--amarelo)}
+nav button i{font-style:normal;width:20px;text-align:center}
+.rodape{padding:14px 20px;font-size:11px;line-height:1.5;border-top:1px solid var(--side2);opacity:.8}
+.rodape a{color:var(--amarelo);text-decoration:none}
+/* ---------- área principal ---------- */
+main{margin-left:236px;flex:1;min-width:0}
+.zebra{height:8px;background:repeating-linear-gradient(-45deg,var(--amarelo) 0 14px,var(--preto) 14px 28px)}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:18px 28px 6px}
+header h1{font-size:22px}
+header p{font-size:13px;color:var(--sub);margin-top:2px}
+.ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:8px 14px;font-size:13px;font-weight:600;color:var(--sub)}
+.seg button.on{background:var(--side);color:#fff}
+.btn{all:unset;cursor:pointer;padding:8px 12px;font-size:13px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--txt)}
+.btn:hover{border-color:var(--amarelo)}
+.page{display:none;padding:12px 28px 32px}
+.page.on{display:block}
+.grid{display:grid;gap:16px}
+.g5{grid-template-columns:repeat(5,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card h3{font-size:14px;margin-bottom:2px}
+.card .desc{font-size:12px;color:var(--sub);margin-bottom:8px}
+.kpi small{font-size:12px;color:var(--sub);text-transform:uppercase;letter-spacing:.4px}
+.kpi .v{font-size:25px;font-weight:700;margin:4px 0 2px;white-space:nowrap}
+.kpi .var{font-size:12px;font-weight:600}
+.kpi svg{width:100%;height:36px;margin-top:6px;display:block}
+.up{color:var(--ok)} .down{color:var(--alerta)}
+.chart{width:100%;height:340px}
+.chart.alto{height:440px}
+.insights{list-style:none;display:grid;gap:10px}
+.insights li{padding:10px 12px;border-left:4px solid var(--amarelo);background:var(--bg);border-radius:6px;font-size:13.5px;line-height:1.45}
+.mt{margin-top:16px}
+/* tabela */
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filtros input,.filtros select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--txt);font-size:13px}
+.filtros input{flex:1;min-width:180px}
+.tabela{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:var(--side);color:#fff;text-align:left;padding:9px 10px;cursor:pointer;white-space:nowrap;font-weight:600}
+th:hover{color:var(--amarelo)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.n,th.n{text-align:right}
+tr.dest td{background:rgba(242,183,5,.18);font-weight:600}
+tbody tr:hover td{background:rgba(242,183,5,.08)}
+.abc{display:flex;gap:10px;margin-top:8px}
+.abc div{flex:1;border-radius:10px;padding:12px;color:#fff}
+.abc b{font-size:22px;display:block}
+.abc span{font-size:12px;opacity:.9}
+.ano-ctrl{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.ano-ctrl input{flex:1;accent-color:var(--amarelo)}
+.ano-ctrl b{font-size:22px;min-width:56px}
+.vazio{max-width:680px;margin:40px auto;line-height:1.6}
+.vazio ol{margin:10px 0 0 20px}
+.vazio code{background:var(--bg);padding:2px 6px;border-radius:4px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--amarelo);color:#1d1f23;font-weight:700;margin-left:6px}
+/* modo TV */
+body.tv aside{display:none} body.tv main{margin-left:0} body.tv .ctrl .esconde-tv{display:none}
+.tvbar{display:none;position:fixed;left:0;right:0;bottom:0;height:4px;background:var(--amarelo);transform-origin:left;z-index:9}
+body.tv .tvbar{display:block}
+/* celular */
+@media (max-width:1100px){.g5{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:860px){
+  body{display:block} aside{position:sticky;top:0;width:100%;flex-direction:row;inset:auto}
+  .marca{padding:10px 14px;border:0} .marca small{display:none}
+  nav{display:flex;padding:0;overflow-x:auto} nav button{width:auto;padding:14px 12px;border-left:0;border-bottom:3px solid transparent;white-space:nowrap}
+  nav button.on{border-bottom-color:var(--amarelo)} nav button span{display:none} .rodape{display:none}
+  main{margin-left:0} header{padding:14px 14px 4px} .page{padding:10px 14px 28px}
+  .g5,.g3,.g2{grid-template-columns:1fr 1fr} .g4{grid-template-columns:1fr 1fr}
+  .g2.quebra,.g3.quebra{grid-template-columns:1fr}
+  .chart{height:300px}
+}
+</style>
+</head>
+<body>
+<aside>
+  <div class="marca"><b>Raio-X <span>da Cana</span></b><small>O agro brasileiro em dados · IBGE</small></div>
+  <nav id="nav">
+    <button data-p="visao" class="on"><i>📊</i><span>Visão geral</span></button>
+    <button data-p="estados"><i>🗺️</i><span>Estados</span></button>
+    <button data-p="municipios"><i>🏘️</i><span>Municípios</span></button>
+    <button data-p="concentracao"><i>📈</i><span>Concentração (Pareto)</span></button>
+    <button data-p="produtividade"><i>🌱</i><span>Produtividade</span></button>
+    <button data-p="regiao"><i>📍</i><span>Iturama e região</span></button>
+    <button data-p="culturas"><i>🌾</i><span>Cana × Soja × Milho</span></button>
+  </nav>
+  <div class="rodape" id="rodape">Fonte: IBGE — PAM<br>Projeto de <a href="https://github.com/jmarcelogomesparreira" target="_blank">Marcelo Parreira</a></div>
+</aside>
+
+<main>
+  <div class="zebra"></div>
+  <header>
+    <div><h1 id="titulo">Visão geral</h1><p id="subtitulo">Carregando dados…</p></div>
+    <div class="ctrl">
+      <div class="seg" id="seg-prod">
+        <button data-prod="cana" class="on">Cana</button>
+        <button data-prod="soja">Soja</button>
+        <button data-prod="milho">Milho</button>
+      </div>
+      <button class="btn esconde-tv" id="bt-tema" title="Tema claro/escuro">🌓</button>
+      <button class="btn" id="bt-tv" title="Modo TV: as telas giram sozinhas">📺 Modo TV</button>
+    </div>
+  </header>
+
+  <!-- ===== VISÃO GERAL ===== -->
+  <section class="page on" id="p-visao">
+    <div class="grid g5" id="kpis"></div>
+    <div class="grid g3 quebra mt">
+      <div class="card" style="grid-column:span 2">
+        <h3>Evolução da produção e da área colhida no Brasil</h3>
+        <div class="desc">Barras: área colhida (eixo da direita) · Linha: produção</div>
+        <div id="ch-evolucao" class="chart"></div>
+      </div>
+      <div class="card"><h3>O que os dados mostram</h3><div class="desc">Gerado automaticamente a partir dos números</div><ul class="insights" id="insights"></ul></div>
+    </div>
+  </section>
+
+  <!-- ===== ESTADOS ===== -->
+  <section class="page" id="p-estados">
+    <div class="grid g2 quebra">
+      <div class="card">
+        <h3>Ranking dos estados por ano</h3>
+        <div class="desc">Arraste o ano ou aperte ▶ para ver a corrida desde o primeiro ano</div>
+        <div class="ano-ctrl"><button class="btn" id="bt-play">▶</button><input type="range" id="ano-uf"><b id="ano-uf-txt"></b></div>
+        <div id="ch-uf-bar" class="chart alto"></div>
+      </div>
+      <div class="card">
+        <h3>Os 5 maiores estados ao longo do tempo</h3>
+        <div class="desc">Produção anual (toneladas)</div>
+        <div id="ch-uf-linha" class="chart alto"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MUNICÍPIOS ===== -->
+  <section class="page" id="p-municipios">
+    <div class="grid g2 quebra">
+      <div class="card"><h3>Os 20 maiores produtores</h3><div class="desc" id="desc-top"></div><div id="ch-top" class="chart alto"></div></div>
+      <div class="card">
+        <h3>Todos os municípios produtores</h3><div class="desc">Clique no título da coluna para ordenar</div>
+        <div class="filtros"><input id="f-busca" placeholder="Buscar município…"><select id="f-uf"><option value="">Todos os estados</option></select></div>
+        <div class="tabela"><table><thead id="t-head"></thead><tbody id="t-body"></tbody></table></div>
+        <div class="desc mt" id="t-info"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONCENTRAÇÃO ===== -->
+  <section class="page" id="p-concentracao">
+    <div class="grid g2 quebra">
+      <div class="card">
+        <h3>Curva de Pareto</h3><div class="desc">Quanto da produção nacional fica concentrada nos maiores municípios</div>
+        <div id="ch-pareto" class="chart alto"></div>
+      </div>
+      <div class="card">
+        <h3>Curva ABC dos municípios produtores</h3>
+        <div class="desc">A = municípios que somam 80% da produção · B = os próximos 15% · C = os últimos 5%</div>
+        <div class="abc" id="abc"></div>
+        <ul class="insights mt" id="insights-pareto"></ul>
+        <div id="ch-top30" class="chart mt"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PRODUTIVIDADE ===== -->
+  <section class="page" id="p-produtividade">
+    <div class="grid g2 quebra">
+      <div class="card"><h3>Tamanho × produtividade</h3><div class="desc">Cada ponto é um município. Quem produz mais também produz melhor? (eixo X em escala log)</div><div id="ch-scatter" class="chart alto"></div></div>
+      <div class="card"><h3>Produtividade média por estado</h3><div class="desc" id="desc-rend-uf"></div><div id="ch-rend-uf" class="chart alto"></div></div>
+    </div>
+    <div class="card mt"><h3>Produtividade do Brasil ao longo do tempo</h3><div class="desc">Toneladas por hectare colhido</div><div id="ch-rend-br" class="chart"></div></div>
+  </section>
+
+  <!-- ===== REGIÃO ===== -->
+  <section class="page" id="p-regiao">
+    <div class="grid g4" id="kpis-dest"></div>
+    <div class="grid g2 quebra mt">
+      <div class="card">
+        <h3 id="tit-dest">Iturama ao longo do tempo</h3>
+        <div class="desc">Compare com outro município (entre os maiores do país):</div>
+        <div class="filtros"><input id="f-comp" list="dl-munis" placeholder="Digite o nome… ex.: Morro Agudo - SP"><button class="btn" id="bt-limpar">Limpar</button></div>
+        <datalist id="dl-munis"></datalist>
+        <div id="ch-dest" class="chart"></div>
+      </div>
+      <div class="card"><h3 id="tit-regiao">Triângulo Mineiro/Alto Paranaíba</h3><div class="desc">Produção somada de todos os municípios da mesorregião</div><div id="ch-regiao" class="chart"></div></div>
+    </div>
+    <div class="card mt"><h3>As 15 mesorregiões que mais produzem</h3><div class="desc" id="desc-meso"></div><div id="ch-meso" class="chart alto"></div></div>
+  </section>
+
+  <!-- ===== CULTURAS ===== -->
+  <section class="page" id="p-culturas">
+    <div class="grid g2 quebra">
+      <div class="card"><h3>Área colhida das três culturas</h3><div class="desc">Hectares colhidos por ano no Brasil</div><div id="ch-area3" class="chart alto"></div></div>
+      <div class="card"><h3>Crescimento da produção (índice)</h3><div class="desc">Primeiro ano = 100. Mostra quem cresceu mais, sem misturar toneladas de produtos diferentes</div><div id="ch-indice" class="chart alto"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-vazio"></section>
+</main>
+<div class="tvbar" id="tvbar"></div>
+
+<script>
+// ============================================================
+//  CONFIGURAÇÃO
+// ============================================================
+const PROD = {
+  cana:  {nome:"Cana-de-açúcar", cor:"#2f7d32"},
+  soja:  {nome:"Soja",           cor:"#b7791f"},
+  milho: {nome:"Milho",          cor:"#d4a017"}
+};
+const TITULOS = {
+  visao:["Visão geral","Produção nacional ano a ano"],
+  estados:["Estados","Quem lidera e como isso mudou"],
+  municipios:["Municípios","Ranking completo do último ano"],
+  concentracao:["Concentração da produção","Pareto e curva ABC"],
+  produtividade:["Produtividade","Toneladas por hectare"],
+  regiao:["Iturama e região","Triângulo Mineiro/Alto Paranaíba"],
+  culturas:["Cana × Soja × Milho","Como as três culturas evoluíram"]
+};
+const S = {d:null, prod:"cana", page:"visao", anoUF:null, play:null, tv:null, sort:{col:4, asc:false}, limite:150, comp:null};
+
+// ============================================================
+//  FORMATAÇÃO DE NÚMEROS (padrão brasileiro)
+// ============================================================
+const css = v => getComputedStyle(document.body).getPropertyValue(v).trim();
+const fmt = (v, c=0) => v==null ? "—" : Number(v).toLocaleString("pt-BR",{minimumFractionDigits:c,maximumFractionDigits:c});
+function curto(v, un=""){
+  if (v==null) return "—";
+  const a = Math.abs(v), u = un ? " "+un : "";
+  if (a>=1e9) return fmt(v/1e9,1)+" bi"+u;
+  if (a>=1e6) return fmt(v/1e6,1)+" mi"+u;
+  if (a>=1e3) return fmt(v/1e3,1)+" mil"+u;
+  return fmt(v)+u;
+}
+const reais = vMil => vMil==null ? "—" : "R$ "+curto(vMil*1000);
+const pct = (v,c=1) => v==null||!isFinite(v) ? "—" : fmt(v*100,c)+"%";
+const ultimo = arr => { for (let i=arr.length-1;i>=0;i--) if (arr[i]!=null) return [arr[i],i]; return [null,-1]; };
+const P = () => S.d.produtos[S.prod];
+const cel = () => window.innerWidth < 640;
+const corta = (t, n) => cel() && t.length > n ? t.slice(0, n-1) + "…" : t;
+const cor = () => PROD[S.prod].cor;
+
+// ============================================================
+//  GRÁFICOS (Plotly)
+// ============================================================
+function layoutBase(){
+  return {margin:{l:64,r:18,t:10,b:42}, paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:"rgba(0,0,0,0)",
+    font:{family:"Inter, Segoe UI, system-ui, sans-serif", size:12, color:css("--txt")}, separators:",.",
+    xaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--line")},
+    yaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--line")},
+    hoverlabel:{bgcolor:"#2b2f36", bordercolor:"#2b2f36", font:{color:"#fff"}},
+    legend:{orientation:"h", y:-0.18}, hovermode:"closest"};
+}
+function junta(a,b){ for (const k in b){ if (b[k] && typeof b[k]==="object" && !Array.isArray(b[k]) && a[k]) junta(a[k],b[k]); else a[k]=b[k]; } return a; }
+function plot(id, data, lay={}){ Plotly.react(id, data, junta(layoutBase(), lay), {responsive:true, displayModeBar:false, locale:"pt-BR"}); }
+
+function spark(arr, c){
+  const v = arr.filter(x=>x!=null).slice(-20); if (v.length<2) return "";
+  const mn=Math.min(...v), mx=Math.max(...v), w=200, h=36;
+  const pts = v.map((x,i)=>`${(i/(v.length-1)*w).toFixed(1)},${(h-2-(x-mn)/((mx-mn)||1)*(h-4)).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2"/><polygon points="0,${h} ${pts} ${w},${h}" fill="${c}" opacity=".12"/></svg>`;
+}
+function variacao(arr, anos, voltar=10){
+  const [v,i] = ultimo(arr); if (i<voltar) return "";
+  const antes = arr[i-voltar]; if (!antes) return "";
+  const x = v/antes-1;
+  return `<span class="var ${x>=0?"up":"down"}">${x>=0?"▲":"▼"} ${pct(Math.abs(x),0)} vs ${anos[i-voltar]}</span>`;
+}
+
+// ============================================================
+//  PÁGINA: VISÃO GERAL
+// ============================================================
+function rVisao(){
+  const b = P().brasil, c = cor();
+  const [prod] = ultimo(b.producao), [area] = ultimo(b.area), [rend] = ultimo(b.rend), [val] = ultimo(b.valor), [nm] = ultimo(b.n_municipios);
+  const kpis = [
+    ["Produção", curto(prod,"t"), b.producao],
+    ["Área colhida", curto(area,"ha"), b.area],
+    ["Produtividade", fmt(rend,1)+" t/ha", b.rend],
+    ["Valor da produção", reais(val), b.valor],
+    ["Municípios produtores", fmt(nm), b.n_municipios]
+  ];
+  document.getElementById("kpis").innerHTML = kpis.map(([n,v,arr])=>
+    `<div class="card kpi"><small>${n}</small><div class="v">${v}</div>${variacao(arr,b.anos)}${spark(arr,c)}</div>`).join("");
+
+  plot("ch-evolucao", [
+    {type:"bar", x:b.anos, y:b.area, name:"Área colhida (ha)", marker:{color:css("--line")}, hovertemplate:"%{x}<br>Área: %{y:,.0f} ha<extra></extra>"},
+    {type:"scatter", mode:"lines+markers", x:b.anos, y:b.producao, name:"Produção (t)", yaxis:"y2", line:{color:c, width:3}, marker:{size:5}, hovertemplate:"%{x}<br>Produção: %{y:,.0f} t<extra></extra>"}
+  ], {yaxis:{title:"hectares", side:"right", showgrid:false}, yaxis2:{overlaying:"y", side:"left", title:"toneladas", gridcolor:css("--grid")}, margin:{l:64, r:64}, hovermode:"x unified"});
+
+  // Insights automáticos
+  const ins = [];
+  const i0 = b.producao.findIndex(x=>x>0), [, iF] = ultimo(b.producao);
+  if (i0>=0 && iF>i0) ins.push(`A produção de ${PROD[S.prod].nome.toLowerCase()} foi de <b>${curto(b.producao[i0],"t")}</b> em ${b.anos[i0]} para <b>${curto(b.producao[iF],"t")}</b> em ${b.anos[iF]}: <b>${fmt(b.producao[iF]/b.producao[i0],1)}×</b> maior.`);
+  const mx = Math.max(...b.producao.filter(x=>x!=null)); ins.push(`O recorde de produção foi em <b>${b.anos[b.producao.indexOf(mx)]}</b>, com ${curto(mx,"t")}.`);
+  const r0 = b.rend.find(x=>x), [rF] = ultimo(b.rend);
+  if (r0 && rF) ins.push(`A produtividade foi de ${fmt(r0,1)} para <b>${fmt(rF,1)} t/ha</b> (${rF>=r0?"+":""}${pct(rF/r0-1,0)}). Parte do crescimento veio de produzir mais por hectare, não só de plantar mais.`);
+  const ufs = rankUF(iF);
+  if (ufs.length) ins.push(`<b>${ufs[0][0]}</b> lidera com ${pct(ufs[0][1]/prod)} da produção nacional, seguido por ${ufs[1]?.[0]} (${pct(ufs[1]?.[1]/prod)}).`);
+  const pa = P().pareto;
+  if (pa) ins.push(`Só <b>${fmt(pa.n50)}</b> municípios (${pct(pa.n50/pa.n_total)} dos produtores) respondem por metade de toda a produção.`);
+  document.getElementById("insights").innerHTML = ins.map(t=>`<li>${t}</li>`).join("");
+}
+
+// ============================================================
+//  PÁGINA: ESTADOS
+// ============================================================
+function rankUF(i){
+  const s = P().ufs.series;
+  return Object.entries(s).map(([uf,v])=>[uf, v.producao[i]||0]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+}
+function rEstados(){
+  const anos = P().ufs.anos, sl = document.getElementById("ano-uf");
+  sl.min = 0; sl.max = anos.length-1;
+  if (S.anoUF==null || S.anoUF>anos.length-1) S.anoUF = anos.length-1;
+  sl.value = S.anoUF;
+  desenhaBarUF();
+  const top5 = rankUF(anos.length-1).slice(0,5).map(x=>x[0]);
+  const paleta = [cor(),"#2b2f36","#f2b705","#5b8def","#c0392b"];
+  plot("ch-uf-linha", top5.map((uf,k)=>({type:"scatter", mode:"lines", name:uf, x:anos, y:P().ufs.series[uf].producao, line:{width:2.5, color:paleta[k]}, hovertemplate:`${uf} %{x}: %{y:,.0f} t<extra></extra>`})), {yaxis:{title:"toneladas"}, hovermode:"x unified"});
+}
+function desenhaBarUF(){
+  const anos = P().ufs.anos, i = S.anoUF, rk = rankUF(i).slice(0,15).reverse();
+  const tot = rankUF(i).reduce((s,x)=>s+x[1],0);
+  document.getElementById("ano-uf-txt").textContent = anos[i];
+  plot("ch-uf-bar", [{type:"bar", orientation:"h", y:rk.map(x=>x[0]), x:rk.map(x=>x[1]),
+    marker:{color:rk.map((x,k)=>k===rk.length-1?css("--amarelo"):cor())},
+    text:rk.map(x=>pct(x[1]/tot)), textposition:"outside", cliponaxis:false,
+    customdata:rk.map(x=>pct(x[1]/tot)), hovertemplate:"%{y}: %{x:,.0f} t (%{customdata})<extra></extra>"}],
+    {margin:{l:40,r:50}, xaxis:{title:"toneladas"}});
+}
+function playUF(){
+  const bt = document.getElementById("bt-play");
+  if (S.play){ clearInterval(S.play); S.play=null; bt.textContent="▶"; return; }
+  if (S.anoUF >= P().ufs.anos.length-1) S.anoUF = 0;
+  bt.textContent = "⏸";
+  S.play = setInterval(()=>{
+    S.anoUF++; document.getElementById("ano-uf").value = S.anoUF; desenhaBarUF();
+    if (S.anoUF >= P().ufs.anos.length-1){ clearInterval(S.play); S.play=null; bt.textContent="▶"; }
+  }, 450);
+}
+
+// ============================================================
+//  PÁGINA: MUNICÍPIOS
+// ============================================================
+const COLS = [["#",null],["Município",1],["UF",2],["Área colhida (ha)",3],["Produção (t)",4],["t/ha",5],["Valor (R$ mil)",6],["Part. Brasil",4]];
+function rMunicipios(){
+  const m = P().municipios, top = m.slice(0,20).reverse(), dest = S.d.meta.destaque.cod;
+  document.getElementById("desc-top").textContent = `Produção em ${S.d.meta.ano_fim} (toneladas)`;
+  plot("ch-top", [{type:"bar", orientation:"h", y:top.map(x=>corta(`${x[1]} - ${x[2]}`, 16)), x:top.map(x=>x[4]),
+    marker:{color:top.map(x=>x[0]===dest?css("--amarelo"):cor())}, hovertemplate:"%{y}<br>%{x:,.0f} t<extra></extra>"}],
+    {margin:{l:cel()?110:170}, xaxis:{title:"toneladas"}});
+  const sel = document.getElementById("f-uf"), atual = sel.value;
+  const ufs = [...new Set(m.map(x=>x[2]))].sort();
+  sel.innerHTML = `<option value="">Todos os estados</option>` + ufs.map(u=>`<option ${u===atual?"selected":""}>${u}</option>`).join("");
+  tabela();
+}
+function tabela(){
+  const m = P().municipios, tot = m.reduce((s,x)=>s+(x[4]||0),0), dest = S.d.meta.destaque.cod;
+  const q = document.getElementById("f-busca").value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const uf = document.getElementById("f-uf").value;
+  const rank = new Map(m.map((x,i)=>[x[0], i+1]));
+  let linhas = m.filter(x => (!uf || x[2]===uf) && (!q || x[1].toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").includes(q)));
+  const {col, asc} = S.sort;
+  if (col!=null) linhas = [...linhas].sort((a,b)=>{ const A=a[col]??-1, B=b[col]??-1; return (typeof A==="string"? A.localeCompare(B) : A-B) * (asc?1:-1); });
+  document.getElementById("t-head").innerHTML = "<tr>"+COLS.map(([n,c],k)=>`<th class="${k>2?"n":""}" data-c="${c}">${n}${c===col&&k!==7?(asc?" ▲":" ▼"):""}</th>`).join("")+"</tr>";
+  document.getElementById("t-body").innerHTML = linhas.slice(0,S.limite).map(x=>
+    `<tr class="${x[0]===dest?"dest":""}"><td>${rank.get(x[0])}º</td><td>${x[1]}</td><td>${x[2]}</td><td class="n">${fmt(x[3])}</td><td class="n">${fmt(x[4])}</td><td class="n">${fmt(x[5],1)}</td><td class="n">${fmt(x[6])}</td><td class="n">${pct((x[4]||0)/tot,2)}</td></tr>`).join("");
+  const mais = linhas.length>S.limite ? ` · <a href="#" id="ver-mais">mostrar mais</a>` : "";
+  document.getElementById("t-info").innerHTML = `${fmt(Math.min(S.limite,linhas.length))} de ${fmt(linhas.length)} municípios${mais}`;
+  document.querySelectorAll("#t-head th").forEach(th=>th.onclick=()=>{ const c=th.dataset.c==="null"?null:+th.dataset.c; if(c==null)return; S.sort = {col:c, asc: S.sort.col===c ? !S.sort.asc : c<=2}; tabela(); });
+  const vm = document.getElementById("ver-mais"); if (vm) vm.onclick = e=>{e.preventDefault(); S.limite+=300; tabela();};
+}
+
+// ============================================================
+//  PÁGINA: CONCENTRAÇÃO (Pareto / ABC)
+// ============================================================
+function rConcentracao(){
+  const pa = P().pareto; if (!pa) return;
+  const n = pa.n_total, x = pa.acumulado.map((_,i)=>(i+1)/n*100);
+  plot("ch-pareto", [
+    {type:"scatter", mode:"lines", x, y:pa.acumulado, line:{color:cor(), width:3}, fill:"tozeroy", fillcolor:cor()+"22", name:"Produção acumulada", hovertemplate:"Os %{x:.1f}% maiores municípios<br>produzem %{y:.1f}% do total<extra></extra>"},
+    {type:"scatter", mode:"lines", x:[0,100], y:[0,100], line:{color:css("--sub"), dash:"dot"}, name:"Distribuição igual", hoverinfo:"skip"}
+  ], {xaxis:{title:"% dos municípios produtores (do maior para o menor)", range:[0,100]}, yaxis:{title:"% da produção nacional", range:[0,101]},
+     shapes:[{type:"line", x0:pa.n80/n*100, x1:pa.n80/n*100, y0:0, y1:80, line:{color:css("--amarelo"), width:2, dash:"dash"}}, {type:"line", x0:0, x1:pa.n80/n*100, y0:80, y1:80, line:{color:css("--amarelo"), width:2, dash:"dash"}}],
+     annotations:[{x:pa.n80/n*100, y:80, text:`${pct(pa.n80/n)} dos municípios = 80%`, showarrow:true, ax:60, ay:30, font:{size:12}}]});
+  const abc = pa.abc;
+  document.getElementById("abc").innerHTML = [["A",abc.A,"#2b2f36"],["B",abc.B,"#d39e00"],["C",abc.C,"#9aa1ab"]].map(([k,v,c])=>
+    `<div style="background:${c}"><span>Classe ${k}</span><b>${fmt(v)}</b><span>${pct(v/n)} dos municípios</span></div>`).join("");
+  document.getElementById("insights-pareto").innerHTML = [
+    `De <b>${fmt(n)}</b> municípios que produzem ${PROD[S.prod].nome.toLowerCase()}, apenas <b>${fmt(pa.n80)}</b> fazem 80% da produção.`,
+    `Os <b>${fmt(abc.C)}</b> municípios da classe C, juntos, somam só 5% do total. É produção pequena e espalhada.`
+  ].map(t=>`<li>${t}</li>`).join("");
+  const m = P().municipios.slice(0,30), tot = P().municipios.reduce((s,x)=>s+(x[4]||0),0);
+  let ac=0; const acum = m.map(x=>(ac+=x[4])/tot*100);
+  plot("ch-top30", [
+    {type:"bar", x:m.map(x=>x[1]), y:m.map(x=>x[4]), marker:{color:cor()}, name:"Produção (t)", hovertemplate:"%{x}: %{y:,.0f} t<extra></extra>"},
+    {type:"scatter", mode:"lines+markers", x:m.map(x=>x[1]), y:acum, yaxis:"y2", line:{color:css("--amarelo"), width:3}, name:"% acumulado", hovertemplate:"Acumulado: %{y:.1f}%<extra></extra>"}
+  ], {margin:{b:110, r:50}, xaxis:{tickangle:-45, tickfont:{size:10}}, yaxis2:{overlaying:"y", side:"right", showgrid:false, ticksuffix:"%", range:[0,100]}, legend:{y:1.15}});
+}
+
+// ============================================================
+//  PÁGINA: PRODUTIVIDADE
+// ============================================================
+function rProdutividade(){
+  const m = P().municipios.filter(x=>x[3]>0 && x[5]!=null).slice(0,1500);
+  const rs = m.map(x=>x[5]).sort((a,b)=>a-b), teto = rs[Math.floor(rs.length*0.995)]||100;
+  const dest = S.d.meta.destaque.cod, d = m.find(x=>x[0]===dest);
+  const traces = [{type:"scattergl", mode:"markers", x:m.map(x=>x[3]), y:m.map(x=>x[5]), text:m.map(x=>`${x[1]} - ${x[2]}`), customdata:m.map(x=>x[4]),
+    marker:{color:cor(), opacity:.55, size:m.map(x=>Math.max(4, Math.sqrt(x[4]/m[0][4])*30))}, name:"Municípios",
+    hovertemplate:"<b>%{text}</b><br>Área: %{x:,.0f} ha<br>Produtividade: %{y:.1f} t/ha<br>Produção: %{customdata:,.0f} t<extra></extra>"}];
+  if (d) traces.push({type:"scatter", mode:"markers+text", x:[d[3]], y:[d[5]], text:[d[1]], textposition:"top center", marker:{color:css("--amarelo"), size:16, line:{color:"#1d1f23", width:2}}, name:d[1], hovertemplate:`<b>${d[1]}</b><br>%{y:.1f} t/ha<extra></extra>`});
+  plot("ch-scatter", traces, {xaxis:{type:"log", title:"área colhida (ha, escala log)"}, yaxis:{title:"t/ha", range:[0,teto*1.05]}, showlegend:false});
+
+  const anos = P().ufs.anos, i = anos.length-1, s = P().ufs.series;
+  const rk = Object.entries(s).map(([uf,v])=>[uf, v.area[i]>0? v.producao[i]/v.area[i] : null, v.producao[i]]).filter(x=>x[1]!=null && x[2]>0).sort((a,b)=>a[1]-b[1]);
+  const [rbr] = ultimo(P().brasil.rend);
+  document.getElementById("desc-rend-uf").textContent = `Toneladas por hectare em ${anos[i]} · linha amarela = média do Brasil (${fmt(rbr,1)} t/ha)`;
+  plot("ch-rend-uf", [{type:"bar", orientation:"h", y:rk.map(x=>x[0]), x:rk.map(x=>x[1]), marker:{color:rk.map(x=>x[1]>=rbr?cor():css("--sub"))}, hovertemplate:"%{y}: %{x:.1f} t/ha<extra></extra>"}],
+    {margin:{l:40}, shapes:[{type:"line", x0:rbr, x1:rbr, y0:-0.5, y1:rk.length-0.5, line:{color:css("--amarelo"), width:3}}]});
+  const b = P().brasil;
+  plot("ch-rend-br", [{type:"scatter", mode:"lines+markers", x:b.anos, y:b.rend, line:{color:cor(), width:3}, marker:{size:5}, hovertemplate:"%{x}: %{y:.1f} t/ha<extra></extra>"}], {yaxis:{title:"t/ha"}});
+}
+
+// ============================================================
+//  PÁGINA: ITURAMA E REGIÃO
+// ============================================================
+function rRegiao(){
+  const p = P(), dest = S.d.meta.destaque.cod, sd = p.series[dest], m = p.municipios;
+  const iBR = m.findIndex(x=>x[0]===dest), lin = m[iBR];
+  const nome = lin ? lin[1] : "Iturama", uf = lin ? lin[2] : "MG";
+  const iUF = lin ? m.filter(x=>x[2]===uf).findIndex(x=>x[0]===dest) : -1;
+  const dm = p.mesos.findIndex(x=>x[0]===S.d.meta.destaque.meso);
+  document.getElementById("tit-dest").textContent = `${nome} ao longo do tempo`;
+  document.getElementById("kpis-dest").innerHTML = lin ? [
+    ["Ranking no Brasil", `${iBR+1}º`, `de ${fmt(m.length)} municípios`],
+    [`Ranking em ${uf}`, `${iUF+1}º`, `de ${fmt(m.filter(x=>x[2]===uf).length)} municípios`],
+    ["Produção", curto(lin[4],"t"), `${fmt(lin[5],1)} t/ha · Brasil: ${fmt(ultimo(p.brasil.rend)[0],1)}`],
+    ["Área colhida", curto(lin[3],"ha"), lin[6]!=null ? `Valor: ${reais(lin[6])}` : ""]
+  ].map(([n,v,s])=>`<div class="card kpi"><small>${n}</small><div class="v">${v}</div><span class="var" style="color:var(--sub)">${s}</span></div>`).join("")
+  : `<div class="card" style="grid-column:1/-1">${nome} não teve produção de ${PROD[S.prod].nome.toLowerCase()} em ${S.d.meta.ano_fim}.</div>`;
+
+  const tr = [];
+  if (sd) tr.push({type:"scatter", mode:"lines+markers", x:sd.anos, y:sd.producao, name:nome, line:{color:css("--amarelo"), width:3}, marker:{size:5}, hovertemplate:`${nome} %{x}: %{y:,.0f} t<extra></extra>`});
+  if (S.comp && p.series[S.comp]){
+    const c = p.series[S.comp], l = m.find(x=>x[0]===S.comp);
+    tr.push({type:"scatter", mode:"lines", x:c.anos, y:c.producao, name:`${l[1]} - ${l[2]}`, line:{color:cor(), width:2.5}, hovertemplate:`${l[1]} %{x}: %{y:,.0f} t<extra></extra>`});
+  }
+  plot("ch-dest", tr, {yaxis:{title:"toneladas"}, hovermode:"x unified"});
+  document.getElementById("dl-munis").innerHTML = m.filter(x=>p.series[x[0]] && x[0]!==dest).map(x=>`<option value="${x[1]} - ${x[2]}">`).join("");
+
+  const rg = p.regiao;
+  plot("ch-regiao", [
+    {type:"bar", x:rg.anos, y:rg.area, name:"Área colhida (ha)", marker:{color:css("--line")}, hovertemplate:"%{x}: %{y:,.0f} ha<extra></extra>"},
+    {type:"scatter", mode:"lines", x:rg.anos, y:rg.producao, name:"Produção (t)", yaxis:"y2", line:{color:cor(), width:3}, hovertemplate:"%{x}: %{y:,.0f} t<extra></extra>"}
+  ], {yaxis:{side:"right", showgrid:false}, yaxis2:{overlaying:"y", side:"left", gridcolor:css("--grid")}, margin:{l:64, r:60}, hovermode:"x unified"});
+
+  const ms = p.mesos.slice(0,15).reverse();
+  document.getElementById("desc-meso").innerHTML = `Produção em ${S.d.meta.ano_fim}` + (dm>=0 ? ` · O Triângulo Mineiro está em <b>${dm+1}º lugar</b>` : "");
+  plot("ch-meso", [{type:"bar", orientation:"h", y:ms.map(x=>corta(`${x[0]} (${x[1]})`, 18)), x:ms.map(x=>x[2]),
+    marker:{color:ms.map(x=>x[0]===S.d.meta.destaque.meso?css("--amarelo"):cor())}, hovertemplate:"%{y}<br>%{x:,.0f} t<extra></extra>"}],
+    {margin:{l:cel()?140:280}, xaxis:{title:"toneladas"}});
+}
+
+// ============================================================
+//  PÁGINA: CANA × SOJA × MILHO
+// ============================================================
+function rCulturas(){
+  const tr = [], ti = [];
+  for (const [k,info] of Object.entries(PROD)){
+    const b = S.d.produtos[k].brasil;
+    tr.push({type:"scatter", mode:"lines", x:b.anos, y:b.area, name:info.nome, line:{color:info.cor, width:3}, hovertemplate:`${info.nome} %{x}: %{y:,.0f} ha<extra></extra>`});
+    const base = b.producao.find(x=>x>0);
+    ti.push({type:"scatter", mode:"lines", x:b.anos, y:b.producao.map(v=>v==null?null:v/base*100), name:info.nome, line:{color:info.cor, width:3}, hovertemplate:`${info.nome} %{x}: %{y:.0f}<extra></extra>`});
+  }
+  plot("ch-area3", tr, {yaxis:{title:"hectares"}, hovermode:"x unified"});
+  plot("ch-indice", ti, {yaxis:{title:"índice (1º ano = 100)", type:"log"}, hovermode:"x unified"});
+}
+
+// ============================================================
+//  NAVEGAÇÃO, MODO TV E INICIALIZAÇÃO
+// ============================================================
+const RENDER = {visao:rVisao, estados:rEstados, municipios:rMunicipios, concentracao:rConcentracao, produtividade:rProdutividade, regiao:rRegiao, culturas:rCulturas};
+function mostra(p){
+  S.page = p;
+  document.querySelectorAll(".page").forEach(s=>s.classList.toggle("on", s.id==="p-"+p));
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on", b.dataset.p===p));
+  const [t,sub] = TITULOS[p];
+  document.getElementById("titulo").textContent = t;
+  document.getElementById("subtitulo").innerHTML = `${PROD[S.prod].nome} · ${sub} · ${S.d.meta.ano_inicio}–${S.d.meta.ano_fim}`;
+  RENDER[p]();
+}
+function modoTV(){
+  if (S.tv){ clearInterval(S.tv); S.tv=null; document.body.classList.remove("tv"); return; }
+  document.body.classList.add("tv");
+  const ordem = Object.keys(RENDER), bar = document.getElementById("tvbar"), T = 15000;
+  let t0 = Date.now();
+  const anima = () => { if (!S.tv) return; bar.style.transform = `scaleX(${Math.min(1,(Date.now()-t0)/T)})`; requestAnimationFrame(anima); };
+  S.tv = setInterval(()=>{ t0 = Date.now(); mostra(ordem[(ordem.indexOf(S.page)+1)%ordem.length]); }, T);
+  anima();
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+}
+function semDados(erro){
+  document.querySelectorAll(".page").forEach(s=>s.classList.remove("on"));
+  const v = document.getElementById("p-vazio"); v.classList.add("on");
+  document.getElementById("subtitulo").textContent = "Os dados ainda não foram gerados";
+  const local = location.protocol==="file:";
+  v.innerHTML = `<div class="card vazio"><h3>⏳ Falta baixar os dados do IBGE</h3>
+    ${local ? `<p>Você abriu o arquivo direto do computador. O navegador bloqueia a leitura do <code>dados/raiox.json</code> assim. Abra pelo GitHub Pages, ou rode <code>python -m http.server</code> na pasta e acesse <code>localhost:8000</code>.</p>` :
+    `<p>O painel lê o arquivo <code>dados/raiox.json</code>, que é gerado automaticamente pelo GitHub:</p>
+    <ol><li>No repositório, abra a aba <b>Actions</b></li><li>Clique em <b>Atualizar dados do IBGE</b> → <b>Run workflow</b></li><li>Espere ficar verde (uns 10 minutos) e recarregue esta página</li></ol>`}
+    <p class="desc mt">Detalhe técnico: ${erro}</p></div>`;
+}
+async function iniciar(){
+  try {
+    const r = await fetch("dados/raiox.json", {cache:"no-cache"});
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    S.d = await r.json();
+  } catch(e){ return semDados(e.message); }
+  document.getElementById("rodape").innerHTML = `${S.d.meta.fonte}<br>Atualizado em ${S.d.meta.gerado_em}<br>Projeto de <a href="https://github.com/jmarcelogomesparreira" target="_blank">Marcelo Parreira</a>`;
+  document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>mostra(b.dataset.p));
+  document.querySelectorAll("#seg-prod button").forEach(b=>b.onclick=()=>{
+    S.prod = b.dataset.prod; S.comp = null; S.limite = 150;
+    document.querySelectorAll("#seg-prod button").forEach(x=>x.classList.toggle("on", x===b));
+    mostra(S.page);
+  });
+  document.getElementById("ano-uf").oninput = e=>{ S.anoUF = +e.target.value; desenhaBarUF(); };
+  document.getElementById("bt-play").onclick = playUF;
+  document.getElementById("f-busca").oninput = ()=>{ S.limite=150; tabela(); };
+  document.getElementById("f-uf").onchange = ()=>{ S.limite=150; tabela(); };
+  document.getElementById("f-comp").onchange = e=>{
+    const l = P().municipios.find(x=>`${x[1]} - ${x[2]}`===e.target.value);
+    if (l){ S.comp = l[0]; rRegiao(); }
+  };
+  document.getElementById("bt-limpar").onclick = ()=>{ S.comp=null; document.getElementById("f-comp").value=""; rRegiao(); };
+  document.getElementById("bt-tema").onclick = ()=>{ document.body.classList.toggle("dark"); mostra(S.page); };
+  document.getElementById("bt-tv").onclick = modoTV;
+  document.addEventListener("keydown", e=>{ if (e.key==="Escape" && S.tv) modoTV(); });
+  mostra("visao");
+}
+iniciar();
+</script>
+</body>
+</html>
