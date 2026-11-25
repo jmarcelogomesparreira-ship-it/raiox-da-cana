@@ -37,10 +37,15 @@ jobs:
       - name: Etapa 2 — preparar dados para o painel
         run: python -u src/etapa2_preparar_dados.py
 
+      - name: Etapa 3 — Selic, dólar e IPCA
+        run: python -u src/etapa3_economia.py
+
       - name: Salvar o resultado no repositório
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dados/raiox.json
-          git diff --staged --quiet || git commit -m "Atualiza dados do IBGE"
+          git add dados/
+          git diff --staged --quiet && exit 0
+          git commit -m "Atualiza dados do IBGE"
+          git pull --rebase origin main
           git push

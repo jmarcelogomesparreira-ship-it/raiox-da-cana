@@ -159,6 +159,18 @@ th{background:#2b2f36}
 .tabela{border-color:transparent;box-shadow:inset 0 0 0 1px var(--line)}
 ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#b9bdc4;border-radius:9px}
 @media (max-width:860px){.hero{padding:22px 20px}.hero h2{font-size:22px}.hero .canavial{width:220px;opacity:.35}.kpi .v{font-size:22px}.kpi .ico{width:32px;height:32px;font-size:16px}}
+
+/* =================== ECONOMIA + FAIXA (ticker) =================== */
+.ticker{background:#1d1f23;color:#e8eaed;overflow:hidden;white-space:nowrap;font-size:12.5px;border-bottom:1px solid #000;position:relative}
+.ticker::before,.ticker::after{content:"";position:absolute;top:0;bottom:0;width:40px;z-index:1}
+.ticker::before{left:0;background:linear-gradient(90deg,#1d1f23,transparent)}.ticker::after{right:0;background:linear-gradient(-90deg,#1d1f23,transparent)}
+.trilho{display:inline-flex;gap:34px;padding:7px 0;animation:rola 45s linear infinite}
+.ticker:hover .trilho{animation-play-state:paused}
+.trilho span b{color:#fff;margin-left:4px} .trilho em{font-style:normal;font-weight:700;margin-left:6px}
+.trilho .up{color:#6fd27a}.trilho .down{color:#ff7a6e}.trilho .rot{color:var(--amarelo);font-weight:700;letter-spacing:.4px}
+@keyframes rola{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.kpi .sub{font-size:12px;color:var(--sub);font-weight:500}
+.real{display:block;font-size:11.5px;font-weight:600;color:var(--sub);margin-top:2px}
 </style>
 </head>
 <body>
@@ -166,6 +178,7 @@ th{background:#2b2f36}
   <div class="marca"><b>🌾 Raio-X <span>da Cana</span></b><small>O agro brasileiro em dados · IBGE</small><br><span class="aovivo" id="aovivo"><i></i>carregando…</span></div>
   <nav id="nav">
     <button data-p="visao" class="on"><i>📊</i><span>Visão geral</span></button>
+    <button data-p="economia"><i>💹</i><span>Economia</span></button>
     <button data-p="estados"><i>🗺️</i><span>Estados</span></button>
     <button data-p="municipios"><i>🏘️</i><span>Municípios</span></button>
     <button data-p="concentracao"><i>📈</i><span>Concentração (Pareto)</span></button>
@@ -178,6 +191,7 @@ th{background:#2b2f36}
 
 <main>
   <div class="zebra"></div>
+  <div class="ticker" id="ticker" hidden><div class="trilho" id="trilho"></div></div>
   <header>
     <div><h1 id="titulo">Visão geral</h1><p id="subtitulo">Carregando dados…</p></div>
     <div class="ctrl">
@@ -203,6 +217,24 @@ th{background:#2b2f36}
       </div>
       <div class="card"><h3>O que os dados mostram</h3><div class="desc">Gerado automaticamente a partir dos números</div><ul class="insights" id="insights"></ul></div>
     </div>
+  </section>
+
+  <!-- ===== ECONOMIA ===== -->
+  <section class="page" id="p-economia">
+    <div class="grid g4" id="kpis-eco"></div>
+    <div class="grid g3 quebra mt">
+      <div class="card" style="grid-column:span 2">
+        <h3>Valor da produção: o que a inflação esconde</h3>
+        <div class="desc" id="desc-valor-real"></div>
+        <div id="ch-valor-real" class="chart alto"></div>
+      </div>
+      <div class="card"><h3>Leitura econômica</h3><div class="desc">Gerado automaticamente a partir dos números</div><ul class="insights" id="insights-eco"></ul></div>
+    </div>
+    <div class="grid g2 quebra mt">
+      <div class="card"><h3>Selic × inflação (IPCA 12 meses)</h3><div class="desc">A distância entre as duas linhas é o <b>juro real</b>. Use os botões para mudar o período</div><div id="ch-selic" class="chart alto"></div></div>
+      <div class="card"><h3>Dólar desde o Plano Real</h3><div class="desc">Média mensal (R$ por US$), com os principais choques marcados</div><div id="ch-dolar" class="chart alto"></div></div>
+    </div>
+    <p class="mt" id="fonte-eco" style="font-size:12px;color:var(--sub);line-height:1.5"></p>
   </section>
 
   <!-- ===== ESTADOS ===== -->
@@ -305,7 +337,8 @@ const TITULOS = {
   concentracao:["Concentração da produção","Pareto e curva ABC"],
   produtividade:["Produtividade","Toneladas por hectare"],
   regiao:["Iturama e região","Triângulo Mineiro/Alto Paranaíba"],
-  culturas:["Cana × Soja × Milho","Como as três culturas evoluíram"]
+  culturas:["Cana × Soja × Milho","Como as três culturas evoluíram"],
+  economia:["Economia","Selic, dólar, inflação e o valor real da produção"]
 };
 const S = {d:null, prod:"cana", page:"visao", anoUF:null, play:null, tv:null, sort:{col:4, asc:false}, limite:150, comp:null};
 
@@ -400,6 +433,9 @@ function rVisao(){
   document.getElementById("kpis").innerHTML = kpis.map(([ico,n,,,arr],i)=>
     `<div class="card kpi"><div class="ico">${ico}</div><small>${n}</small><div class="v" id="kv${i}">—</div>${variacao(arr,b.anos)}${spark(arr,c)}</div>`).join("");
   kpis.forEach(([,,v,f],i)=>conta(document.getElementById("kv"+i), v, f));
+  const [vv, iv] = ultimo(b.valor);
+  if (S.eco && iv>=10){ const r = valorReal(vv,b.anos[iv],b.anos[iv])/valorReal(b.valor[iv-10],b.anos[iv-10],b.anos[iv]) - 1;
+    if (isFinite(r)) document.getElementById("kv3").parentElement.querySelector(".var").insertAdjacentHTML("afterend", `<span class="real">Sem inflação: <span class="${r>=0?"up":"down"}">${r>=0?"▲":"▼"} ${pct(Math.abs(r),0)}</span></span>`); }
 
   // Banner de destaque
   const [, iUlt] = ultimo(b.producao), lider = rankUF(iUlt)[0];
@@ -428,6 +464,90 @@ function rVisao(){
   const pa = P().pareto;
   if (pa) ins.push(`Só <b>${fmt(pa.n50)}</b> municípios (${pct(pa.n50/pa.n_total)} dos produtores) respondem por metade de toda a produção.`);
   document.getElementById("insights").innerHTML = ins.map((t,i)=>`<li style="animation-delay:${.15+i*.08}s"><span class="n">${i+1}</span><span>${t}</span></li>`).join("");
+}
+
+
+// ============================================================
+//  ECONOMIA (Banco Central + IPCA)
+// ============================================================
+const serie = obj => { const k = Object.keys(obj||{}).sort(); return [k, k.map(x=>obj[x])]; };
+function idxAno(a){ return S.eco?.anual?.ipca_indice?.[String(a)]; }
+function dolarAno(a){ return S.eco?.anual?.dolar_medio?.[String(a)]; }
+function valorReal(vMil, ano, base){ const i = idxAno(ano), ib = idxAno(base); return vMil!=null && i && ib ? vMil*ib/i : null; }
+function valorUSD(vMil, ano){ const d = dolarAno(ano); return vMil!=null && d ? vMil*1000/d : null; }
+const usd = v => v==null ? "—" : "US$ "+curto(v);
+function seta(x){ return x==null||!isFinite(x) ? "" : `<span class="${x>=0?"up":"down"}">${x>=0?"▲":"▼"} ${pct(Math.abs(x),1)}</span>`; }
+function mesTxt(m){ const [a,mm] = m.split("-"); return ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"][+mm-1]+"/"+a; }
+
+function rEconomia(){
+  const box = document.getElementById("kpis-eco");
+  if (!S.eco){ box.innerHTML = `<div class="card" style="grid-column:1/-1">⏳ Os dados de economia ainda não foram gerados. Rode o robô <b>Atualizar economia</b> na aba Actions.</div>`; return; }
+  const at = S.eco.atual, b = P().brasil, [vF, iF] = ultimo(b.valor), anoF = b.anos[iF];
+  const sm = at.selic_meta, dl = at.dolar_diario, ip = at.ipca_12m;
+  const vUSD = valorUSD(vF, anoF);
+  const k = [
+    ["🏦","Selic (meta Copom)", sm?.valor, v=>fmt(v,2)+"%", sm ? `há 1 ano: ${fmt(sm.ha_1_ano,2)}%` : ""],
+    ["💵","Dólar PTAX", dl?.valor, v=>"R$ "+fmt(v,2), dl ? `${seta(dl.valor/dl.ha_1_ano-1)} em 12 meses · ${dl.data.split("-").reverse().join("/")}` : ""],
+    ["📈","IPCA 12 meses", ip?.valor, v=>fmt(v,2)+"%", ip ? `inflação acumulada até ${mesTxt(ip.data)}` : ""],
+    ["🌎",`${PROD[S.prod].nome} em dólar`, vUSD, usd, `safra ${anoF} · dólar médio R$ ${fmt(dolarAno(anoF),2)}`]
+  ];
+  box.innerHTML = k.map(([ic,n,,,sub],i)=>`<div class="card kpi"><div class="ico">${ic}</div><small>${n}</small><div class="v" id="ke${i}">—</div><span class="sub">${sub}</span></div>`).join("");
+  k.forEach(([,,v,f],i)=>conta(document.getElementById("ke"+i), v, f));
+
+  // Valor: nominal x real x dólar (a partir de 1995)
+  const anos = [], nom = [], real = [], dol = [];
+  b.anos.forEach((a,i)=>{ if (a>=1995 && b.valor[i]!=null){ anos.push(a); nom.push(b.valor[i]*1000); real.push(valorReal(b.valor[i],a,anoF)*1000); dol.push(valorUSD(b.valor[i],a)); } });
+  document.getElementById("desc-valor-real").innerHTML = `Cinza: valor da época (nominal) · <b style="color:${cor()}">Cor: corrigido pelo IPCA, em R$ de ${anoF}</b> · Barras amarelas: em dólar (eixo da direita)`;
+  plot("ch-valor-real", [
+    {type:"bar", x:anos, y:dol.map(v=>v/1e9), name:"Em dólar", yaxis:"y2", marker:{color:"rgba(242,183,5,.45)"}, hovertemplate:"%{x}: US$ %{y:.1f} bi<extra></extra>"},
+    {type:"scatter", mode:"lines", x:anos, y:nom.map(v=>v/1e9), name:"Nominal (R$ da época)", line:{color:css("--sub"), width:2, dash:"dot"}, hovertemplate:"Nominal: R$ %{y:.1f} bi<extra></extra>"},
+    {type:"scatter", mode:"lines+markers", x:anos, y:real.map(v=>v==null?null:v/1e9), name:`Real (R$ de ${anoF})`, line:{color:cor(), width:3.5}, marker:{size:5}, hovertemplate:`Real: R$ %{y:.1f} bi (valores de ${anoF})<extra></extra>`}
+  ], {yaxis:{title:"R$ bilhões", side:"left"}, yaxis2:{overlaying:"y", side:"right", showgrid:false, title:"US$ bilhões", rangemode:"tozero"}, margin:{l:64,r:64}, hovermode:"x unified"});
+
+  // Insights
+  const ins = [], i10 = anos.indexOf(anoF-10);
+  if (i10>=0){
+    ins.push(`Em 10 anos, o valor da ${PROD[S.prod].nome.toLowerCase()} subiu <b>${pct(nom.at(-1)/nom[i10]-1,0)}</b> no papel. Tirando a inflação, o ganho <b>real</b> foi de <b>${pct(real.at(-1)/real[i10]-1,0)}</b>.`);
+    ins.push(`Em dólar, a variação no mesmo período foi de <b>${pct(dol.at(-1)/dol[i10]-1,0)}</b>. O câmbio pesa muito para quem exporta açúcar, etanol e grãos.`);
+  }
+  const iMaxR = real.indexOf(Math.max(...real.filter(x=>x!=null)));
+  ins.push(`Corrigido pela inflação, o melhor ano foi <b>${anos[iMaxR]}</b>: R$ ${curto(real[iMaxR])} em valores de hoje.`);
+  if (sm && ip) ins.push(`Com Selic de <b>${fmt(sm.valor,2)}%</b> e inflação de <b>${fmt(ip.valor,2)}%</b>, o juro real está perto de <b>${fmt(((1+sm.valor/100)/(1+ip.valor/100)-1)*100,1)}%</b> ao ano. Crédito caro encarece máquinas, insumos e a expansão de lavouras.`);
+  document.getElementById("insights-eco").innerHTML = ins.map((t,i)=>`<li style="animation-delay:${.15+i*.08}s"><span class="n">${i+1}</span><span>${t}</span></li>`).join("");
+
+  // Selic x IPCA
+  const [mS, vS] = serie(S.eco.mensal.selic_mensal), [mI, vI] = serie(S.eco.mensal.ipca_12m);
+  const botoes = {buttons:[{count:5,label:"5 anos",step:"year",stepmode:"backward"},{count:10,label:"10 anos",step:"year",stepmode:"backward"},{count:20,label:"20 anos",step:"year",stepmode:"backward"},{step:"all",label:"Tudo"}], bgcolor:css("--bg"), activecolor:css("--amarelo"), font:{size:11}};
+  const ini = mS.length ? (+mS.at(-1).slice(0,4)-15)+"-01" : null;
+  plot("ch-selic", [
+    {type:"scatter", mode:"lines", x:mS, y:vS, name:"Selic (% a.a.)", line:{color:"#2b2f36", width:2.5}, hovertemplate:"%{x|%b/%Y}: Selic %{y:.2f}%<extra></extra>"},
+    {type:"scatter", mode:"lines", x:mI, y:vI, name:"IPCA 12 meses (%)", line:{color:"#c0392b", width:2.5}, fill:"tozeroy", fillcolor:"rgba(192,57,43,.08)", hovertemplate:"%{x|%b/%Y}: IPCA %{y:.2f}%<extra></extra>"}
+  ], {xaxis:{type:"date", rangeselector:botoes, range: ini ? [ini, mS.at(-1)] : undefined}, yaxis:{ticksuffix:"%"}, hovermode:"x unified", margin:{t:40}});
+
+  // Dólar com eventos marcados
+  const [mD, vD] = serie(S.eco.mensal.dolar_mensal);
+  const eventos = [["2002-10","Eleição 2002"],["2008-12","Crise global"],["2015-09","Recessão"],["2020-05","Pandemia"],["2024-12","Pico de 2024"]];
+  const notas = eventos.map(([m,t])=>{ const i = mD.indexOf(m); return i<0 ? null : {x:m, y:vD[i], text:t, showarrow:true, arrowhead:0, ax:0, ay:-34, font:{size:11}, bgcolor:css("--card"), bordercolor:css("--line")}; }).filter(Boolean);
+  plot("ch-dolar", [{type:"scatter", mode:"lines", x:mD, y:vD, line:{color:"#2e7d32", width:2.5}, fill:"tozeroy", fillcolor:"rgba(46,125,50,.10)", hovertemplate:"%{x|%b/%Y}: R$ %{y:.2f}<extra></extra>"}],
+    {xaxis:{type:"date"}, yaxis:{tickprefix:"R$ "}, annotations:notas, showlegend:false});
+  document.getElementById("fonte-eco").textContent = `Fontes: ${S.eco.meta.fontes}. Atualizado em ${S.eco.meta.gerado_em}. Valores reais calculados pela média anual do índice IPCA; valores em dólar pela média anual do câmbio.`;
+}
+
+function montaTicker(){
+  if (!S.eco) return;
+  const at = S.eco.atual, it = [];
+  if (at.selic_meta) it.push(`<span><span class="rot">SELIC</span><b>${fmt(at.selic_meta.valor,2)}%</b>${at.selic_meta.ha_1_ano?`<em class="${at.selic_meta.valor>=at.selic_meta.ha_1_ano?"up":"down"}">${at.selic_meta.valor>=at.selic_meta.ha_1_ano?"▲":"▼"} ${fmt(at.selic_meta.ha_1_ano,2)}% há 1 ano</em>`:""}</span>`);
+  if (at.dolar_diario){ const x = at.dolar_diario.valor/at.dolar_diario.ha_1_ano-1; it.push(`<span><span class="rot">DÓLAR</span><b>R$ ${fmt(at.dolar_diario.valor,3)}</b><em class="${x>=0?"up":"down"}">${x>=0?"▲":"▼"} ${pct(Math.abs(x),1)} 12m</em></span>`); }
+  if (at.ipca_12m) it.push(`<span><span class="rot">IPCA 12M</span><b>${fmt(at.ipca_12m.valor,2)}%</b></span>`);
+  if (at.selic_meta && at.ipca_12m) it.push(`<span><span class="rot">JURO REAL</span><b>${fmt(((1+at.selic_meta.valor/100)/(1+at.ipca_12m.valor/100)-1)*100,1)}%</b></span>`);
+  for (const [k,info] of Object.entries(PROD)){
+    const b = S.d.produtos[k].brasil, [p,i] = ultimo(b.producao), x = p/b.producao[i-1]-1;
+    const ic = {cana:"🌾",soja:"🫘",milho:"🌽"}[k];
+    it.push(`<span>${ic} <span class="rot">${info.nome.toUpperCase()} ${b.anos[i]}</span><b>${curto(p,"t")}</b><em class="${x>=0?"up":"down"}">${x>=0?"▲":"▼"} ${pct(Math.abs(x),1)}</em></span>`);
+    const v = valorUSD(ultimo(b.valor)[0], b.anos[i]); if (v) it.push(`<span><span class="rot">${info.nome.toUpperCase()} EM US$</span><b>${usd(v)}</b></span>`);
+  }
+  document.getElementById("trilho").innerHTML = it.join("") + it.join("");
+  document.getElementById("ticker").hidden = false;
 }
 
 // ============================================================
@@ -611,7 +731,7 @@ function rCulturas(){
 // ============================================================
 //  NAVEGAÇÃO, MODO TV E INICIALIZAÇÃO
 // ============================================================
-const RENDER = {visao:rVisao, estados:rEstados, municipios:rMunicipios, concentracao:rConcentracao, produtividade:rProdutividade, regiao:rRegiao, culturas:rCulturas};
+const RENDER = {visao:rVisao, economia:rEconomia, estados:rEstados, municipios:rMunicipios, concentracao:rConcentracao, produtividade:rProdutividade, regiao:rRegiao, culturas:rCulturas};
 function mostra(p){
   S.page = p;
   document.body.style.setProperty("--acc", PROD[S.prod].cor);
@@ -649,6 +769,8 @@ async function iniciar(){
     if (!r.ok) throw new Error("HTTP "+r.status);
     S.d = await r.json();
   } catch(e){ return semDados(e.message); }
+  try { const r2 = await fetch("dados/economia.json", {cache:"no-cache"}); if (r2.ok) S.eco = await r2.json(); } catch(e){}
+  montaTicker();
   document.getElementById("rodape").innerHTML = `${S.d.meta.fonte}<br>Atualizado em ${S.d.meta.gerado_em}<br>Projeto de <a href="https://github.com/jmarcelogomesparreira-ship-it" target="_blank">Marcelo Parreira</a>`;
   document.getElementById("aovivo").innerHTML = `<i></i>Dados até ${S.d.meta.ano_fim} · IBGE`;
   document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>mostra(b.dataset.p));

@@ -14,6 +14,7 @@ Painel interativo com a produção de **cana-de-açúcar, soja e milho** em **to
 | Tela | Pergunta que responde |
 |---|---|
 | **Visão geral** | Quanto o Brasil produz, em quanta área, e como isso mudou em 50 anos? |
+| **Economia** | Selic, dólar e IPCA. Quanto a produção vale **descontada a inflação** e **em dólar**? |
 | **Estados** | Quem lidera? (com "corrida" animada ano a ano) |
 | **Municípios** | Ranking completo, com busca e filtro por estado |
 | **Concentração** | Curva de Pareto e ABC: quantos municípios fazem 80% da produção? |
@@ -21,7 +22,7 @@ Painel interativo com a produção de **cana-de-açúcar, soja e milho** em **to
 | **Iturama e região** | Posição de Iturama-MG e do Triângulo Mineiro no cenário nacional |
 | **Cana × Soja × Milho** | Como as três culturas cresceram, comparadas entre si |
 
-Extras: gráficos com valor ao passar o mouse, tema escuro e **modo TV** (as telas giram sozinhas).
+Extras: faixa com Selic, dólar e IPCA rolando no topo, gráficos com valor ao passar o mouse, tema escuro e **modo TV** (as telas giram sozinhas).
 
 ## Como funciona (pipeline de dados)
 
@@ -40,11 +41,14 @@ Extras: gráficos com valor ao passar o mouse, tema escuro e **modo TV** (as tel
 2. **Tratamento:** a etapa 2 converte os códigos do IBGE (`-` = zero, `X` = sigilo), transforma a tabela de formato longo em largo, calcula a produtividade (t/ha), descarta valores em moedas anteriores ao Real e cruza com a lista de mesorregiões
 3. **Resumo:** gera totais por Brasil, estado e mesorregião, rankings, curva de Pareto/ABC e séries históricas
 4. **Publicação:** o painel em HTML/JavaScript lê o JSON e desenha os gráficos com Plotly
-5. **Automação:** um workflow do GitHub Actions refaz tudo no dia 1º de cada mês
+5. **Economia:** a etapa 3 busca Selic e dólar na API do **Banco Central** (SGS) e o IPCA no IBGE, para corrigir valores pela inflação e converter para dólar
+6. **Automação:** um robô refaz tudo no dia 1º de cada mês, e outro atualiza a economia todo dia útil
 
-## Fonte dos dados
+## Fontes dos dados
 
 **IBGE — Produção Agrícola Municipal (PAM)**, [tabela 5457 do SIDRA](https://sidra.ibge.gov.br/tabela/5457).
+**IBGE — IPCA**, [tabela 1737 do SIDRA](https://sidra.ibge.gov.br/tabela/1737).
+**Banco Central — SGS**: Selic (séries 432 e 4189) e dólar (séries 1 e 3698).
 Variáveis: área plantada, área colhida, quantidade produzida e valor da produção.
 Valores em R$ são nominais (sem correção pela inflação) e só são exibidos a partir de 1995.
 
@@ -53,12 +57,15 @@ Valores em R$ são nominais (sem correção pela inflação) e só são exibidos
 ```
 raiox-da-cana/
 ├── index.html                      # o painel (abre no GitHub Pages)
-├── dados/raiox.json                # gerado automaticamente
+├── dados/raiox.json                # gerado automaticamente (IBGE)
+├── dados/economia.json             # gerado automaticamente (Banco Central + IPCA)
 ├── src/
 │   ├── etapa1_baixar_dados.py      # coleta via API do IBGE
-│   └── etapa2_preparar_dados.py    # limpeza e resumo com pandas
+│   ├── etapa2_preparar_dados.py    # limpeza e resumo com pandas
+│   └── etapa3_economia.py          # Selic, dólar e IPCA
 ├── .github/workflows/
-│   └── atualizar-dados.yml         # robô que roda as etapas 1 e 2
+│   ├── atualizar-dados.yml         # robô mensal: etapas 1, 2 e 3
+│   └── atualizar-economia.yml      # robô diário: etapa 3
 └── requirements.txt
 ```
 
@@ -69,9 +76,10 @@ pip install -r requirements.txt
 python src/etapa1_baixar_dados.py --ultimos 3   # teste rápido
 python src/etapa1_baixar_dados.py               # base completa
 python src/etapa2_preparar_dados.py
+python src/etapa3_economia.py
 python -m http.server                           # abra http://localhost:8000
 ```
 
 ## Tecnologias
 
-**Python** (pandas, requests) · **API REST** do IBGE · **GitHub Actions** · **HTML/CSS/JavaScript** · **Plotly.js** · **GitHub Pages**
+**Python** (pandas, requests) · **APIs REST** do IBGE e do Banco Central · **GitHub Actions** · **HTML/CSS/JavaScript** · **Plotly.js** · **GitHub Pages**

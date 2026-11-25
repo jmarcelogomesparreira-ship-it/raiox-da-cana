@@ -1,0 +1,38 @@
+# Robô rápido: atualiza só Selic, dólar e IPCA (leva menos de 1 minuto).
+# Roda de segunda a sexta às 14h23 (horário de Brasília), depois que o
+# Banco Central divulga a cotação PTAX do dia.
+
+name: Atualizar economia (Selic, dólar, IPCA)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 17 * * 1-5"
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+permissions:
+  contents: write
+
+jobs:
+  economia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Etapa 3 — Selic, dólar e IPCA
+        run: python -u src/etapa3_economia.py
+      - name: Salvar o resultado no repositório
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dados/economia.json
+          git diff --staged --quiet && exit 0
+          git commit -m "Atualiza economia (Selic, dólar, IPCA)"
+          git pull --rebase origin main
+          git push
