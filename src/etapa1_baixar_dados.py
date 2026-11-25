@@ -4,8 +4,8 @@ ETAPA 1 — Baixar os dados da Produção Agrícola Municipal (PAM) do IBGE
 
 O que este script faz:
   1. Pergunta ao IBGE quais anos existem na tabela 5457 da PAM.
-  2. Para cada ano e cada produto (cana, soja, milho), baixa os dados
-     de TODOS os municípios do Brasil pela API do SIDRA.
+  2. Para cada ano, baixa os dados dos 3 produtos (cana, soja, milho)
+     de TODOS os municípios do Brasil pela API do SIDRA, num pedido só.
   3. Salva cada pedaço em dados_brutos/pam/ (se cair a internet, ele
      continua de onde parou na próxima vez).
   4. Junta tudo num arquivo só: dados_brutos/pam_bruto.csv
@@ -36,11 +36,11 @@ import requests
 TABELA = 5457  # PAM: área, produção, rendimento e valor das lavouras
 
 # Variáveis (o que medir). Código do IBGE -> nome curto que vamos usar.
+# (Só as 3 que o painel usa: menos dados = download mais rápido.
+#  Outras opções: 8331 = área plantada, 112 = rendimento médio.)
 VARIAVEIS = {
-    8331: "area_plantada_ha",
     216: "area_colhida_ha",
     214: "producao_t",
-    112: "rendimento_kg_ha",
     215: "valor_mil_reais",
 }
 
@@ -158,11 +158,14 @@ def baixar_municipios():
     print(f"Municípios: {len(lista)} salvos em {ARQUIVO_MUNICIPIOS.name}")
 
 
-def baixar_pedaco(ano, cod_produto):
-    """Baixa um ano + um produto para todos os municípios (n6/all)."""
+def baixar_ano(ano):
+    """Baixa um ano, com os 3 produtos, para todos os municípios (n6/all).
+    O IBGE aceita até 100 mil valores por pedido: 5.570 municípios
+    x 3 medidas x 3 produtos = ~50 mil, então cabe num pedido só."""
     vars_txt = ",".join(str(v) for v in VARIAVEIS)
+    prods_txt = ",".join(str(p) for p in PRODUTOS)
     url = (f"{URL_DADOS}/t/{TABELA}/n6/all/v/{vars_txt}"
-           f"/p/{ano}/c782/{cod_produto}")
+           f"/p/{ano}/c782/{prods_txt}")
     return json_para_tabela(pedir_json(url))
 
 
@@ -181,19 +184,20 @@ def main():
         anos = anos[-args.ultimos:]
     print(f"\nAnos: {anos[0]} a {anos[-1]} ({len(anos)} anos)")
 
-    total = len(anos) * len(PRODUTOS)
-    feitos = 0
-    for ano in anos:
-        for cod, nome in PRODUTOS.items():
-            feitos += 1
-            arquivo = PASTA_BRUTOS / f"pam_{nome}_{ano}.csv"
-            if arquivo.exists():
-                print(f"[{feitos}/{total}] {nome} {ano} — já baixado, pulando")
-                continue
-            print(f"[{feitos}/{total}] {nome} {ano} — baixando...")
-            df = baixar_pedaco(ano, cod)
-            df.to_csv(arquivo, index=False, encoding="utf-8")
-            time.sleep(1)  # educação com o servidor do IBGE
+    inicio = time.time()
+    for n, ano in enumerate(anos, start=1):
+        arquivo = PASTA_BRUTOS / f"pam_{ano}.csv"
+        if arquivo.exists():
+            print(f"[{n}/{len(anos)}] {ano} — já baixado, pulando")
+            continue
+        t0 = time.time()
+        df = baixar_ano(ano)
+        df.to_csv(arquivo, index=False, encoding="utf-8")
+        gasto = time.time() - inicio
+        falta = gasto / n * (len(anos) - n)
+        print(f"[{n}/{len(anos)}] {ano} — {len(df):,} linhas em {time.time()-t0:.0f}s "
+              f"(faltam ~{falta/60:.0f} min)".replace(",", "."))
+        time.sleep(1)  # educação com o servidor do IBGE
 
     # Junta todos os pedaços
     print("\nJuntando tudo...")
