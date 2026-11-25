@@ -15,6 +15,7 @@ Painel interativo com a produção de **cana-de-açúcar, soja e milho** em **to
 |---|---|
 | **Visão geral** | Quanto o Brasil produz, em quanta área, e como isso mudou em 50 anos? |
 | **Economia** | Selic, dólar e IPCA. Quanto a produção vale **descontada a inflação** e **em dólar**? |
+| **Mapa do Brasil** | Onde está a produção? Mapa por estado (com linha do tempo desde 1974) e por município, com malhas oficiais do IBGE |
 | **Estados** | Quem lidera? (com "corrida" animada ano a ano) |
 | **Municípios** | Ranking completo, com busca e filtro por estado |
 | **Concentração** | Curva de Pareto e ABC: quantos municípios fazem 80% da produção? |
@@ -49,6 +50,7 @@ Extras: faixa com Selic, dólar e IPCA rolando no topo, gráficos com valor ao p
 **IBGE — Produção Agrícola Municipal (PAM)**, [tabela 5457 do SIDRA](https://sidra.ibge.gov.br/tabela/5457).
 **IBGE — IPCA**, [tabela 1737 do SIDRA](https://sidra.ibge.gov.br/tabela/1737).
 **Banco Central — SGS**: Selic (séries 432 e 4189) e dólar (séries 1 e 3698).
+**IBGE — API de malhas**: contornos oficiais dos estados e municípios.
 Variáveis: área plantada, área colhida, quantidade produzida e valor da produção.
 Valores em R$ são nominais (sem correção pela inflação) e só são exibidos a partir de 1995.
 
@@ -62,10 +64,12 @@ raiox-da-cana/
 ├── src/
 │   ├── etapa1_baixar_dados.py      # coleta via API do IBGE
 │   ├── etapa2_preparar_dados.py    # limpeza e resumo com pandas
-│   └── etapa3_economia.py          # Selic, dólar e IPCA
+│   ├── etapa3_economia.py          # Selic, dólar e IPCA
+│   └── etapa4_mapas.py             # contornos de estados e municípios (IBGE)
 ├── .github/workflows/
 │   ├── atualizar-dados.yml         # robô mensal: etapas 1, 2 e 3
-│   └── atualizar-economia.yml      # robô diário: etapa 3
+│   ├── atualizar-economia.yml      # robô diário: etapa 3
+│   └── baixar-mapas.yml            # robô manual: etapa 4
 └── requirements.txt
 ```
 

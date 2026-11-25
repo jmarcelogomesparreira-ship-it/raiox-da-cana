@@ -57,6 +57,29 @@ def arredonda(coords, casas=3):
     return [arredonda(c, casas) for c in coords]
 
 
+def area_assinada(anel):
+    """Fórmula do laço (shoelace): positivo = sentido anti-horário."""
+    return sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(anel, anel[1:]))
+
+
+def ajusta_sentido(geom):
+    """O IBGE desenha os contornos no sentido anti-horário (padrão GeoJSON),
+    mas o Plotly espera o contorno externo no sentido HORÁRIO. Sem isso, ele
+    pinta o mundo inteiro "menos" o estado. Aqui invertemos o que precisar."""
+    def poligono(aneis):
+        saida = []
+        for i, anel in enumerate(aneis):
+            externo = i == 0
+            if (area_assinada(anel) > 0) == externo:   # externo anti-horário ou buraco horário
+                anel = anel[::-1]
+            saida.append(anel)
+        return saida
+    if geom["type"] == "Polygon":
+        geom["coordinates"] = poligono(geom["coordinates"])
+    elif geom["type"] == "MultiPolygon":
+        geom["coordinates"] = [poligono(p) for p in geom["coordinates"]]
+
+
 def main():
     PASTA.mkdir(parents=True, exist_ok=True)
     for arquivo, (nivel, qualidade) in MAPAS.items():
@@ -65,6 +88,7 @@ def main():
         for f in geo["features"]:
             f["properties"] = {"cod": str(f["properties"]["codarea"])}
             f["geometry"]["coordinates"] = arredonda(f["geometry"]["coordinates"])
+            ajusta_sentido(f["geometry"])
         caminho = PASTA / arquivo
         caminho.write_text(json.dumps(geo, separators=(",", ":")), encoding="utf-8")
         print(f"   {len(geo['features'])} áreas · {caminho.stat().st_size/1024/1024:.1f} MB")
