@@ -1,0 +1,36 @@
+# Robô que baixa os mapas oficiais do IBGE (contornos de estados e municípios).
+# Só precisa rodar uma vez: os contornos quase nunca mudam.
+# Para rodar: aba Actions → "Baixar mapas do IBGE" → Run workflow.
+
+name: Baixar mapas do IBGE
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+permissions:
+  contents: write
+
+jobs:
+  mapas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Etapa 4 — mapas do IBGE
+        run: python -u src/etapa4_mapas.py
+      - name: Salvar o resultado no repositório
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dados/mapa_ufs.json dados/mapa_municipios.json
+          git diff --staged --quiet && exit 0
+          git commit -m "Adiciona mapas do IBGE"
+          git pull --rebase origin main
+          git push
