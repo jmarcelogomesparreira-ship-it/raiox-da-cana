@@ -129,7 +129,6 @@ nav button.on{background:linear-gradient(90deg,rgba(242,183,5,.20),rgba(242,183,
 /* banner de destaque */
 .hero{position:relative;overflow:hidden;border-radius:18px;padding:28px 32px;color:#fff;margin-bottom:16px;min-height:170px;box-shadow:var(--sombra2);
   background:linear-gradient(115deg,#1b1e23 0%,#2b2f36 50%,color-mix(in srgb,var(--acc) 85%,#000) 125%)}
-.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:6px;background:repeating-linear-gradient(-45deg,var(--amarelo) 0 12px,#1d1f23 12px 24px);opacity:.9}
 .hero small{color:var(--amarelo);font-weight:800;letter-spacing:1.4px;text-transform:uppercase;font-size:11.5px}
 .hero h2{font-size:31px;margin:8px 0;max-width:660px;line-height:1.18;position:relative;z-index:1}
 .hero h2 span{color:var(--amarelo)}
@@ -184,6 +183,11 @@ th{background:#2b2f36}
 .info-uf svg{width:100%;height:60px;margin-top:10px}
 .dica{font-size:12px;color:var(--sub);background:var(--bg);padding:8px 10px;border-radius:8px;margin-top:12px}
 @media (max-width:860px){#ch-mapa{height:420px}}
+
+/* botão restaurar zoom */
+.bt-reset{all:unset;cursor:pointer;position:absolute;top:14px;right:14px;z-index:3;font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;background:var(--side);color:#fff;box-shadow:var(--sombra2);animation:sobe .25s ease both}
+.bt-reset:hover{background:var(--acc)}
+.bt-reset[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -405,10 +409,25 @@ function layoutBase(){
     xaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--line")},
     yaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--line")},
     hoverlabel:{bgcolor:"#2b2f36", bordercolor:"#2b2f36", font:{color:"#fff"}},
-    legend:{orientation:"h", y:-0.18}, hovermode:"closest", transition:{duration:500, easing:"cubic-in-out"}};
+    legend:{orientation:"h", y:-0.18}, hovermode:"closest", dragmode: cel() ? false : "zoom"};
 }
 function junta(a,b){ for (const k in b){ if (b[k] && typeof b[k]==="object" && !Array.isArray(b[k]) && a[k]) junta(a[k],b[k]); else a[k]=b[k]; } return a; }
-function plot(id, data, lay={}){ Plotly.react(id, data, junta(layoutBase(), lay), {responsive:true, displayModeBar:false, locale:"pt-BR", topojsonURL:"dados/topojson/"}); }
+function plot(id, data, lay={}){
+  Plotly.react(id, data, junta(layoutBase(), lay), {responsive:true, displayModeBar:false, locale:"pt-BR", topojsonURL:"dados/topojson/", doubleClick:"reset"});
+  const el = document.getElementById(id);
+  if (el._comReset) { el._botao.hidden = true; return; }
+  el._comReset = true;
+  // Botão "Restaurar" que aparece quando o gráfico recebe zoom ou recorte
+  const bt = document.createElement("button");
+  bt.className = "bt-reset"; bt.textContent = "↺ Restaurar"; bt.hidden = true; bt.title = "Voltar o gráfico ao normal (ou dê dois cliques no gráfico)";
+  el.closest(".card").appendChild(bt); el._botao = bt;
+  el.on("plotly_relayout", ev => {
+    const k = Object.keys(ev);
+    if (k.some(x => x.includes("autorange"))) { bt.hidden = true; return; }
+    if (k.some(x => x.includes("range") || x.startsWith("geo."))) bt.hidden = false;
+  });
+  bt.onclick = () => { bt.hidden = true; RENDER[S.page](); };
+}
 
 function spark(arr, c){
   const v = arr.filter(x=>x!=null).slice(-20); if (v.length<2) return "";
@@ -434,6 +453,47 @@ function conta(el, alvo, formata, ms=1100){
     el.textContent = formata(alvo*e); if (p<1) requestAnimationFrame(passo); else el.textContent = formata(alvo); };
   requestAnimationFrame(passo);
 }
+function sojal(){
+  let g = "", x = 24;
+  [96,118,104,124,100,116,108,122,98].forEach((h,i)=>{
+    const base = 240, topo = base-h, folha = i%2 ? "#9ccc65" : "#8bc34a";
+    let ramos = "";
+    for (let k=0; k<6; k++){
+      const y = base-18-k*(h-24)/6, lado = k%2 ? 1 : -1, fx = x+lado*20, fy = y-12;
+      ramos += `<line x1="${x}" y1="${y}" x2="${fx}" y2="${fy}" stroke="#689f38" stroke-width="2"/>
+        <ellipse cx="${fx}" cy="${fy-7}" rx="5" ry="9" fill="${folha}"/>
+        <ellipse cx="${fx-8}" cy="${fy}" rx="9" ry="5" fill="${folha}" opacity=".9"/>
+        <ellipse cx="${fx+8}" cy="${fy}" rx="9" ry="5" fill="${folha}" opacity=".9"/>`;
+      if (k<4) ramos += `<rect x="${x+(lado>0?3:-8)}" y="${y-4}" width="5" height="15" rx="2.5" fill="#d4b26a" transform="rotate(${lado*22} ${x} ${y})"/>
+        <rect x="${x+(lado>0?-8:3)}" y="${y+4}" width="5" height="13" rx="2.5" fill="#c9a55a" transform="rotate(${-lado*18} ${x} ${y})"/>`;
+    }
+    g += `<g style="animation-delay:${(i%4)*-0.8}s"><line x1="${x}" y1="${base}" x2="${x}" y2="${topo}" stroke="#689f38" stroke-width="3" stroke-linecap="round"/>${ramos}
+      <ellipse cx="${x}" cy="${topo-6}" rx="6" ry="10" fill="${folha}"/></g>`;
+    x += 44;
+  });
+  return `<svg class="canavial" viewBox="0 0 400 240" preserveAspectRatio="xMaxYMax meet" style="opacity:.6">${g}</svg>`;
+}
+function milharal(){
+  let g = "", x = 26;
+  [200,176,214,186,206,180,196].forEach((h,i)=>{
+    const base = 240, topo = base-h, cor = i%2 ? "#7cb342" : "#9ccc65";
+    let folhas = "";
+    for (let k=0; k<4; k++){
+      const y = base-30-k*(h-50)/4, lado = k%2 ? 1 : -1;
+      folhas += `<path d="M${x} ${y} q ${lado*30} -26 ${lado*52} 4" stroke="${cor}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    }
+    const ey = base-h*0.48;
+    g += `<g style="animation-delay:${(i%5)*-0.7}s">
+      <line x1="${x}" y1="${base}" x2="${x}" y2="${topo}" stroke="${cor}" stroke-width="6" stroke-linecap="round"/>${folhas}
+      <ellipse cx="${x+9}" cy="${ey}" rx="7" ry="18" fill="#f2c94c" transform="rotate(16 ${x+9} ${ey})"/>
+      <path d="M${x+2} ${ey+16} q 4 -22 16 -32 M${x+3} ${ey+16} q 14 -12 14 -30" stroke="#8bc34a" stroke-width="3" fill="none"/>
+      <path d="M${x+14} ${ey-17} q 6 -8 4 -14" stroke="#d7a86e" stroke-width="2" fill="none"/>
+      <path d="M${x} ${topo} l -10 -16 M${x} ${topo} l 0 -20 M${x} ${topo} l 10 -16 M${x} ${topo} l -16 -6 M${x} ${topo} l 16 -6" stroke="#d7b46a" stroke-width="2.5" stroke-linecap="round"/></g>`;
+    x += 56;
+  });
+  return `<svg class="canavial" viewBox="0 0 400 240" preserveAspectRatio="xMaxYMax meet" style="opacity:.6">${g}</svg>`;
+}
+const desenhoProduto = () => ({cana:canavial, soja:sojal, milho:milharal})[S.prod]();
 function canavial(){
   let g = "", x = 20;
   const alturas = [150,190,165,210,175,200,155,185,170,195,160];
@@ -473,7 +533,7 @@ function rVisao(){
   // Banner de destaque
   const [, iUlt] = ultimo(b.producao), lider = rankUF(iUlt)[0];
   const recorde = Math.max(...b.producao.filter(x=>x!=null));
-  document.getElementById("hero").innerHTML = `${canavial()}
+  document.getElementById("hero").innerHTML = `${desenhoProduto()}
     <small>Raio-X · safra ${b.anos[iUlt]}</small>
     <h2>O Brasil colheu <span id="hero-n">—</span> de ${PROD[S.prod].nome.toLowerCase()} em ${b.anos[iUlt]}</h2>
     <p>Em ${curto(area,"hectares")} espalhados por ${fmt(nm)} municípios. Dados oficiais do IBGE, de ${S.d.meta.ano_inicio} a ${S.d.meta.ano_fim}, atualizados automaticamente todo mês.</p>
